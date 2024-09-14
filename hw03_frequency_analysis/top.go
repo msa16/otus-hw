@@ -22,17 +22,8 @@ func normalize(str string) string {
 	}
 
 	if sb.Len() == 0 && utf8.RuneCountInString(str) > 1 {
-		// специальный случай: больше одного минуса подряд - это слово
-		allHyphen := true
-		for _, r := range str {
-			if r != '-' {
-				allHyphen = false
-				break
-			}
-		}
-		if allHyphen {
-			sb.WriteString(str)
-		}
+		// специальный случай: любая последовательность знаков пунктуации длиннее 1 знака - это слово
+		sb.WriteString(str)
 	}
 	return strings.ToLower(sb.String())
 }

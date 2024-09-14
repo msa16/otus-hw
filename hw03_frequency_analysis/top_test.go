@@ -43,12 +43,14 @@ var text = `Как видите, он  спускается  по  лестни�
 	посидеть у огня и послушать какую-нибудь интересную сказку.
 		В этот вечер...`
 
-var textExt = `
-"Нога", "нога!", "нога", "нога,", " 'нога' ";
-"какой-то" "какойто"
+var textExt1 = `
+Нога, нога!, нога :нога, 'нога';
+какой-то какойто :) ;) :-)`
+
+var textExt2 = `
 ",dog,cat!", "dog...cat", "dogcat"
 ------- 
-солнце - звезда`
+Солнце - звезда !`
 
 func TestTop10(t *testing.T) {
 	t.Run("no words in empty string", func(t *testing.T) {
@@ -89,10 +91,17 @@ func TestTop10(t *testing.T) {
 }
 
 func TestTop10Ext(t *testing.T) {
-	t.Run("additional task", func(t *testing.T) {
+	t.Run("additional task 1", func(t *testing.T) {
 		expected := []string{
-			"нога", "-------", "dog,cat", "dog...cat", "dogcat", "звезда", "какой-то", "какойто", "солнце",
+			"нога", ":)", ":-)", ";)", "какой-то", "какойто",
 		}
-		require.Equal(t, expected, Top10(textExt))
+		require.Equal(t, expected, Top10(textExt1))
+	})
+
+	t.Run("additional task 2", func(t *testing.T) {
+		expected := []string{
+			"-------", "dog,cat", "dog...cat", "dogcat", "звезда", "солнце",
+		}
+		require.Equal(t, expected, Top10(textExt2))
 	})
 }
