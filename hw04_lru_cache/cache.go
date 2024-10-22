@@ -1,5 +1,7 @@
 package hw04lrucache
 
+import "sync"
+
 type Key string
 
 type Cache interface {
@@ -12,11 +14,13 @@ type lruCache struct {
 	capacity int
 	queue    List
 	items    map[Key]*ListItem
+	mutex    sync.Mutex
 }
 
 func NewCache(capacity int) Cache {
 	return &lruCache{
 		capacity: capacity,
+		mutex:    sync.Mutex{},
 		queue:    NewList(),
 		items:    make(map[Key]*ListItem, capacity),
 	}
@@ -30,6 +34,7 @@ type pair struct {
 }
 
 func (cache *lruCache) Set(key Key, value interface{}) bool {
+	cache.mutex.Lock()
 	elem, ok := cache.items[key]
 	if ok {
 		// если элемент присутствует в словаре, то обновить его значение и переместить элемент в начало очереди;
@@ -45,11 +50,15 @@ func (cache *lruCache) Set(key Key, value interface{}) bool {
 		}
 		cache.items[key] = cache.queue.PushFront(&pair{key: key, data: value})
 	}
+	cache.mutex.Unlock()
 	// возвращаемое значение - флаг, присутствовал ли элемент в кэше.
 	return ok
 }
 
 func (cache *lruCache) Get(key Key) (interface{}, bool) {
+	cache.mutex.Lock()
+	defer cache.mutex.Unlock()
+
 	elem, ok := cache.items[key]
 	if ok {
 		// если элемент присутствует в словаре, то переместить элемент в начало очереди и вернуть его значение и true;
@@ -61,7 +70,9 @@ func (cache *lruCache) Get(key Key) (interface{}, bool) {
 }
 
 func (cache *lruCache) Clear() {
+	cache.mutex.Lock()
 	// чтобы не удалять по одному, пересоздаем словарь и очередь
 	cache.items = make(map[Key]*ListItem, cache.capacity)
 	cache.queue = NewList()
+	cache.mutex.Unlock()
 }
