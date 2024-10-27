@@ -50,7 +50,6 @@ func TestCopy(t *testing.T) {
 
 		err = Copy("/dev/random", "/dev/null", 0, 0)
 		require.ErrorIs(t, err, ErrInvalidLimitPositive)
-
 	})
 	t.Run("success cases", func(t *testing.T) {
 		err := Copy("/dev/random", "/dev/null", 0, 100)

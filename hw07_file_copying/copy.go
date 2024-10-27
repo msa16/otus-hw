@@ -8,7 +8,7 @@ import (
 	"github.com/cheggaaa/pb/v3"
 )
 
-const COPY_STEP = 8192
+const CopyStep = 8192
 
 var (
 	ErrUnsupportedFile       = errors.New("unsupported file")
@@ -91,7 +91,7 @@ func (ci *CopyInfo) doCopy() error {
 	barReader := bar.NewProxyReader(ci.fromFile)
 
 	for bytesCopied := int64(0); bytesCopied < ci.bytesToCopy; {
-		stepToCopy := min(COPY_STEP, ci.bytesToCopy-bytesCopied)
+		stepToCopy := min(CopyStep, ci.bytesToCopy-bytesCopied)
 		written, err := io.CopyN(ci.toFile, barReader, stepToCopy)
 		bytesCopied += written
 		if err != nil {
