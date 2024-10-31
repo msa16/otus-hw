@@ -21,16 +21,14 @@ func testOneFile(t *testing.T, srcFileName, tmpFileName, expectedFileName string
 func TestCopy(t *testing.T) {
 	t.Run("error cases", func(t *testing.T) {
 		err := Copy("", "", 0, 0)
-		if _, ok := err.(*os.PathError); !ok {
-			require.Fail(t, "err is not *os.PathError")
-		}
+		require.ErrorIs(t, err, ErrEmptyFileName)
 
 		err = Copy("/dev/random", "///", 1, 1)
 		if _, ok := err.(*os.PathError); !ok {
 			require.Fail(t, "err is not *os.PathError")
 		}
 
-		err = Copy("", "/dev/null", 0, 0)
+		err = Copy("****", "/dev/null", 0, 0)
 		if _, ok := err.(*os.PathError); !ok {
 			require.Fail(t, "err is not *os.PathError")
 		}
@@ -41,10 +39,10 @@ func TestCopy(t *testing.T) {
 			require.Fail(t, "err is not *os.PathError")
 		}
 
-		err = Copy("", "", -1, 0)
+		err = Copy("/dev/random", "/dev/full", -1, 0)
 		require.ErrorIs(t, err, ErrInvalidOffset)
 
-		err = Copy("", "", 0, -1)
+		err = Copy("/dev/random", "/dev/full", 0, -1)
 		require.ErrorIs(t, err, ErrInvalidLimit)
 
 		err = Copy(".", "/dev/null", 0, 0)

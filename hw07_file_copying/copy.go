@@ -17,6 +17,7 @@ var (
 	ErrInvalidOffset         = errors.New("offset cannot be negative")
 	ErrInvalidLimit          = errors.New("limit cannot be negative")
 	ErrInvalidLimitPositive  = errors.New("limit must be positive")
+	ErrEmptyFileName         = errors.New("empty file name")
 )
 
 func sameRealFile(srcFileName, destFileName string) bool {
@@ -30,13 +31,20 @@ func sameRealFile(srcFileName, destFileName string) bool {
 	return false
 }
 
-func openSrcFile(fromPath string, offset, limit int64, bytesToCopy *int64) (*os.File, error) {
+func checkArgs(fromPath, toPath string, offset, limit int64) error {
 	if offset < 0 {
-		return nil, ErrInvalidOffset
+		return ErrInvalidOffset
 	}
 	if limit < 0 {
-		return nil, ErrInvalidLimit
+		return ErrInvalidLimit
 	}
+	if fromPath == "" || toPath == "" {
+		return ErrEmptyFileName
+	}
+	return nil
+}
+
+func prepareSrcFile(fromPath string, offset, limit int64, bytesToCopy *int64) (*os.File, error) {
 	fromFile, err := os.Open(fromPath)
 	if err != nil {
 		return nil, err
@@ -97,9 +105,13 @@ func doCopy(fromFile *os.File, toFile *os.File, bytesToCopy int64) error {
 }
 
 func Copy(fromPath, toPath string, offset, limit int64) error {
-	// открываем входной файл
+	// проверки аргументов
+	if err := checkArgs(fromPath, toPath, offset, limit); err != nil {
+		return err
+	}
+	// подготовка источника данных
 	var bytesToCopy int64
-	fromFile, err := openSrcFile(fromPath, offset, limit, &bytesToCopy)
+	fromFile, err := prepareSrcFile(fromPath, offset, limit, &bytesToCopy)
 	if err != nil {
 		if fromFile != nil {
 			fromFile.Close()
