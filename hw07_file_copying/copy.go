@@ -19,25 +19,6 @@ var (
 	ErrInvalidLimitPositive  = errors.New("limit must be positive")
 )
 
-type CopyInfo struct {
-	fromPath    string
-	toPath      string
-	offset      int64
-	limit       int64
-	bytesToCopy int64
-	fromFile    *os.File
-	toFile      *os.File
-}
-
-func NewCopyInfo(fromPath, toPath string, offset, limit int64) *CopyInfo {
-	return &CopyInfo{
-		fromPath: fromPath,
-		toPath:   toPath,
-		offset:   offset,
-		limit:    limit,
-	}
-}
-
 func sameRealFile(srcFileName, destFileName string) bool {
 	destFI, err := os.Stat(destFileName)
 	// файл результата существует ?
@@ -49,62 +30,61 @@ func sameRealFile(srcFileName, destFileName string) bool {
 	return false
 }
 
-func (ci *CopyInfo) openSrcFile() error {
-	if ci.offset < 0 {
-		return ErrInvalidOffset
+func openSrcFile(fromPath string, offset, limit int64, bytesToCopy *int64) (*os.File, error) {
+	if offset < 0 {
+		return nil, ErrInvalidOffset
 	}
-	if ci.limit < 0 {
-		return ErrInvalidLimit
+	if limit < 0 {
+		return nil, ErrInvalidLimit
 	}
-	var err error
-	ci.fromFile, err = os.Open(ci.fromPath)
+	fromFile, err := os.Open(fromPath)
 	if err != nil {
-		return err
+		return nil, err
 	}
 	// проверки для входного файла
-	fromFileInfo, err := ci.fromFile.Stat()
+	fromFileInfo, err := fromFile.Stat()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	if fromFileInfo.IsDir() {
-		return ErrUnsupportedFile
+		return nil, ErrUnsupportedFile
 	}
 	if fromFileInfo.Mode().IsRegular() {
 		// offset больше, чем размер файла - невалидная ситуация;
-		if ci.offset > fromFileInfo.Size() {
-			return ErrOffsetExceedsFileSize
+		if offset > fromFileInfo.Size() {
+			return nil, ErrOffsetExceedsFileSize
 		}
-		ci.bytesToCopy = fromFileInfo.Size() - ci.offset
-		if ci.limit > 0 {
-			ci.bytesToCopy = min(ci.limit, ci.bytesToCopy)
+		*bytesToCopy = fromFileInfo.Size() - offset
+		if limit > 0 {
+			*bytesToCopy = min(limit, *bytesToCopy)
 		}
 	} else {
 		// размер файла неизвестен, тогда нужен лимит
-		if ci.limit == 0 {
-			return ErrInvalidLimitPositive
+		if limit == 0 {
+			return nil, ErrInvalidLimitPositive
 		}
-		ci.bytesToCopy = ci.limit
+		*bytesToCopy = limit
 	}
-	if ci.offset > 0 {
+	if offset > 0 {
 		// проматываем от начала входного файла
-		_, err = ci.fromFile.Seek(ci.offset, io.SeekStart)
+		_, err = fromFile.Seek(offset, io.SeekStart)
 		if err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return nil
+	return fromFile, nil
 }
 
-func (ci *CopyInfo) doCopy() error {
+func doCopy(fromFile *os.File, toFile *os.File, bytesToCopy int64) error {
 	// start new bar
-	bar := pb.Full.Start64(ci.bytesToCopy)
+	bar := pb.Full.Start64(bytesToCopy)
 	defer bar.Finish()
 	// create proxy reader
-	barReader := bar.NewProxyReader(ci.fromFile)
+	barReader := bar.NewProxyReader(fromFile)
 
-	for bytesCopied := int64(0); bytesCopied < ci.bytesToCopy; {
-		stepToCopy := min(CopyStep, ci.bytesToCopy-bytesCopied)
-		written, err := io.CopyN(ci.toFile, barReader, stepToCopy)
+	for bytesCopied := int64(0); bytesCopied < bytesToCopy; {
+		stepToCopy := min(CopyStep, bytesToCopy-bytesCopied)
+		written, err := io.CopyN(toFile, barReader, stepToCopy)
 		bytesCopied += written
 		if err != nil {
 			if err == io.EOF {
@@ -116,41 +96,38 @@ func (ci *CopyInfo) doCopy() error {
 	return nil
 }
 
-func (ci *CopyInfo) Copy() error {
+func Copy(fromPath, toPath string, offset, limit int64) error {
 	// открываем входной файл
-	err := ci.openSrcFile()
+	var bytesToCopy int64
+	fromFile, err := openSrcFile(fromPath, offset, limit, &bytesToCopy)
 	if err != nil {
-		if ci.fromFile != nil {
-			ci.fromFile.Close()
+		if fromFile != nil {
+			fromFile.Close()
 		}
 		return err
 	}
-	defer ci.fromFile.Close()
+	defer fromFile.Close()
 
 	// создаем выходной файл
-	useTempFile := sameRealFile(ci.fromPath, ci.toPath)
+	var toFile *os.File
+	useTempFile := sameRealFile(fromPath, toPath)
 	if useTempFile {
 		// файл источник и файл приемник совпадают - копирование через временный файл
-		ci.toFile, err = os.CreateTemp(filepath.Dir(ci.toPath), "copy_temp")
+		toFile, err = os.CreateTemp(filepath.Dir(toPath), "copy_temp")
 	} else {
-		ci.toFile, err = os.Create(ci.toPath)
+		toFile, err = os.Create(toPath)
 	}
 	if err != nil {
 		return err
 	}
 	defer func() {
-		ci.toFile.Close()
+		toFile.Close()
 		if useTempFile {
-			err = os.Rename(ci.toFile.Name(), ci.toPath)
+			err = os.Rename(toFile.Name(), toPath)
 			if err != nil {
-				os.Remove(ci.toFile.Name())
+				os.Remove(toFile.Name())
 			}
 		}
 	}()
-	return ci.doCopy()
-}
-
-func Copy(fromPath, toPath string, offset, limit int64) error {
-	ci := NewCopyInfo(fromPath, toPath, offset, limit)
-	return ci.Copy()
+	return doCopy(fromFile, toFile, bytesToCopy)
 }
