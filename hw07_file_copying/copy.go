@@ -4,6 +4,7 @@ import (
 	"errors"
 	"io"
 	"os"
+	"path/filepath"
 
 	"github.com/cheggaaa/pb/v3"
 )
@@ -35,6 +36,17 @@ func NewCopyInfo(fromPath, toPath string, offset, limit int64) *CopyInfo {
 		offset:   offset,
 		limit:    limit,
 	}
+}
+
+func sameRealFile(srcFileName, destFileName string) bool {
+	destFI, err := os.Stat(destFileName)
+	// файл результата существует ?
+	if err == nil {
+		srcFI, _ := os.Stat(srcFileName)
+		// файл результата и исходный файл - один и тот же обычный файл ?
+		return os.SameFile(srcFI, destFI) && destFI.Mode().IsRegular()
+	}
+	return false
 }
 
 func (ci *CopyInfo) openSrcFile() error {
@@ -116,12 +128,25 @@ func (ci *CopyInfo) Copy() error {
 	defer ci.fromFile.Close()
 
 	// создаем выходной файл
-	ci.toFile, err = os.Create(ci.toPath)
+	useTempFile := sameRealFile(ci.fromPath, ci.toPath)
+	if useTempFile {
+		// файл источник и файл приемник совпадают - копирование через временный файл
+		ci.toFile, err = os.CreateTemp(filepath.Dir(ci.toPath), "copy_temp")
+	} else {
+		ci.toFile, err = os.Create(ci.toPath)
+	}
 	if err != nil {
 		return err
 	}
-	defer ci.toFile.Close()
-
+	defer func() {
+		ci.toFile.Close()
+		if useTempFile {
+			err = os.Rename(ci.toFile.Name(), ci.toPath)
+			if err != nil {
+				os.Remove(ci.toFile.Name())
+			}
+		}
+	}()
 	return ci.doCopy()
 }
 

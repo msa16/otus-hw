@@ -8,8 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func testOneFile(t *testing.T, tmpFileName, expectedFileName string, offset, limit int64) {
-	err := Copy("testdata/input.txt", tmpFileName, offset, limit)
+const inputTestFile = "testdata/input.txt"
+
+func testOneFile(t *testing.T, srcFileName, tmpFileName, expectedFileName string, offset, limit int64) {
+	err := Copy(srcFileName, tmpFileName, offset, limit)
 	require.NoError(t, err)
 	actual, _ := os.ReadFile(tmpFileName)
 	expected, _ := os.ReadFile(expectedFileName)
@@ -63,11 +65,24 @@ func TestCopy(t *testing.T) {
 		defer os.Remove(f.Name())
 		f.Close()
 
-		testOneFile(t, f.Name(), "testdata/out_offset0_limit0.txt", 0, 0)
-		testOneFile(t, f.Name(), "testdata/out_offset0_limit10.txt", 0, 10)
-		testOneFile(t, f.Name(), "testdata/out_offset0_limit1000.txt", 0, 1000)
-		testOneFile(t, f.Name(), "testdata/out_offset0_limit10000.txt", 0, 10000)
-		testOneFile(t, f.Name(), "testdata/out_offset100_limit1000.txt", 100, 1000)
-		testOneFile(t, f.Name(), "testdata/out_offset6000_limit1000.txt", 6000, 1000)
+		testOneFile(t, inputTestFile, f.Name(), "testdata/out_offset0_limit0.txt", 0, 0)
+		testOneFile(t, inputTestFile, f.Name(), "testdata/out_offset0_limit10.txt", 0, 10)
+		testOneFile(t, inputTestFile, f.Name(), "testdata/out_offset0_limit1000.txt", 0, 1000)
+		testOneFile(t, inputTestFile, f.Name(), "testdata/out_offset0_limit10000.txt", 0, 10000)
+		testOneFile(t, inputTestFile, f.Name(), "testdata/out_offset100_limit1000.txt", 100, 1000)
+		testOneFile(t, inputTestFile, f.Name(), "testdata/out_offset6000_limit1000.txt", 6000, 1000)
 	})
+
+	t.Run("test same file", func(t *testing.T) {
+		f, _ := os.CreateTemp("", "copy_test")
+		defer os.Remove(f.Name())
+		f.Close()
+		// копия тестового файла
+		testOneFile(t, inputTestFile, f.Name(), "testdata/out_offset0_limit0.txt", 0, 0)
+		// сам в себя, полный размер
+		testOneFile(t, f.Name(), f.Name(), "testdata/out_offset0_limit0.txt", 0, 0)
+		// сам в себя, со смещением и длиной
+		testOneFile(t, f.Name(), f.Name(), "testdata/out_offset100_limit1000.txt", 100, 1000)
+	})
+
 }
