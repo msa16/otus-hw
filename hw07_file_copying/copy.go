@@ -112,15 +112,14 @@ func Copy(fromPath, toPath string, offset, limit int64) (errOut error) {
 	// подготовка источника данных
 	var bytesToCopy int64
 	fromFile, err := prepareSrcFile(fromPath, offset, limit, &bytesToCopy)
-	if err != nil {
+	defer func() {
 		if fromFile != nil {
 			fromFile.Close()
 		}
+	}()
+	if err != nil {
 		return err
 	}
-	defer func() {
-		fromFile.Close()
-	}()
 
 	// создаем выходной файл
 	var toFile *os.File
@@ -137,6 +136,10 @@ func Copy(fromPath, toPath string, offset, limit int64) (errOut error) {
 	defer func() {
 		toFile.Close()
 		if useTempFile {
+			// сначала закрыть входной файл
+			fromFile.Close()
+			fromFile = nil
+			// теперь переименовываем
 			err = os.Rename(toFile.Name(), toPath)
 			if err != nil {
 				errOut = err
