@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -18,6 +19,21 @@ func testOneFile(t *testing.T, srcFileName, tmpFileName, expectedFileName string
 	require.Equal(t, bytes.Compare(actual, expected), 0)
 }
 
+func TestDevice(t *testing.T) {
+	if strings.Contains(strings.ToLower(os.Getenv("OS")), "windows") {
+		t.Skip("Skipping for Windows")
+	}
+	t.Run("linux devices", func(t *testing.T) {
+		err := Copy("/dev/random", "/dev/null", 0, 100)
+		require.NoError(t, err)
+
+		err = Copy("/dev/random", "/dev/null", 100, 100)
+		require.NoError(t, err)
+
+		err = Copy("/dev/random", "/dev/null", 0, 0)
+		require.ErrorIs(t, err, ErrInvalidLimitPositive)
+	})
+}
 func TestCopy(t *testing.T) {
 	t.Run("error cases", func(t *testing.T) {
 		err := Copy("", "", 0, 0)
@@ -47,16 +63,6 @@ func TestCopy(t *testing.T) {
 
 		err = Copy(".", "/dev/null", 0, 0)
 		require.ErrorIs(t, err, ErrUnsupportedFile)
-
-		err = Copy("/dev/random", "/dev/null", 0, 0)
-		require.ErrorIs(t, err, ErrInvalidLimitPositive)
-	})
-	t.Run("success cases", func(t *testing.T) {
-		err := Copy("/dev/random", "/dev/null", 0, 100)
-		require.NoError(t, err)
-
-		err = Copy("/dev/random", "/dev/null", 100, 100)
-		require.NoError(t, err)
 	})
 	t.Run("test file data", func(t *testing.T) {
 		f, _ := os.CreateTemp("", "copy_test")
