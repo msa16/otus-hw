@@ -104,7 +104,7 @@ func doCopy(fromFile *os.File, toFile *os.File, bytesToCopy int64) error {
 	return nil
 }
 
-func Copy(fromPath, toPath string, offset, limit int64) error {
+func Copy(fromPath, toPath string, offset, limit int64) (errOut error) {
 	// проверки аргументов
 	if err := checkArgs(fromPath, toPath, offset, limit); err != nil {
 		return err
@@ -118,7 +118,9 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		}
 		return err
 	}
-	defer fromFile.Close()
+	defer func() {
+		fromFile.Close()
+	}()
 
 	// создаем выходной файл
 	var toFile *os.File
@@ -137,6 +139,7 @@ func Copy(fromPath, toPath string, offset, limit int64) error {
 		if useTempFile {
 			err = os.Rename(toFile.Name(), toPath)
 			if err != nil {
+				errOut = err
 				os.Remove(toFile.Name())
 			}
 		}
