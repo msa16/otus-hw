@@ -1,0 +1,8 @@
+linters-settings:
+  depguard:
+    rules:
+      test:
+        files:
+          - "$test"
+        allow:
+          - github.com/stretchr/testify/require
