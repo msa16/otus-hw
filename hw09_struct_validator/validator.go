@@ -86,14 +86,15 @@ func validateImpl(v interface{}, errors *ValidationErrors) error {
 
 		fieldVal := reflVal.Field(i)
 		validateTags := strings.Split(validate, "|")
-		var programError error = nil
-		if fieldVal.CanInt() {
+		var programError error
+		switch {
+		case fieldVal.CanInt():
 			programError = validateInt(validateTags, structField.Name, int(fieldVal.Int()), errors)
-		} else if fieldVal.Type().Kind() == reflect.String {
+		case fieldVal.Type().Kind() == reflect.String:
 			programError = validateString(validateTags, structField.Name, fieldVal.String(), errors)
-		} else if fieldVal.Type().Kind() == reflect.Slice {
+		case fieldVal.Type().Kind() == reflect.Slice:
 			programError = validateSlice(validateTags, structField.Name, fieldVal, errors)
-		} else if fieldVal.Kind() == reflect.Struct && validate == "nested" {
+		case fieldVal.Kind() == reflect.Struct && validate == "nested":
 			// поддержка валидации вложенных по композиции структур
 			programError = validateImpl(fieldVal.Interface(), errors)
 		}
@@ -207,27 +208,32 @@ func validateInt(validateTags []string, fieldName string, fieldValue int, errors
 				})
 			}
 		case "in":
-			set := strings.Split(t[1], ",")
-			found := false
-			for _, s := range set {
-				inValue, err := strconv.Atoi(s)
-				if err != nil {
-					return fmt.Errorf("%w: %s", ErrInvalidInTag, s)
-				}
-				if inValue == fieldValue {
-					found = true
-					break
-				}
-			}
-			if !found {
-				*errors = append(*errors, ValidationError{
-					Field: fieldName,
-					Err:   fmt.Errorf("%w: value %d, set %v", ErrNotInSet, fieldValue, set),
-				})
-			}
+			return validateIntIn(t[1], fieldName, fieldValue, errors)
 		default:
 			return fmt.Errorf("%w: %s", ErrUnknownValidator, t[0])
 		}
+	}
+	return nil
+}
+
+func validateIntIn(inStr string, fieldName string, fieldValue int, errors *ValidationErrors) error {
+	set := strings.Split(inStr, ",")
+	found := false
+	for _, s := range set {
+		inValue, err := strconv.Atoi(s)
+		if err != nil {
+			return fmt.Errorf("%w: %s", ErrInvalidInTag, s)
+		}
+		if inValue == fieldValue {
+			found = true
+			break
+		}
+	}
+	if !found {
+		*errors = append(*errors, ValidationError{
+			Field: fieldName,
+			Err:   fmt.Errorf("%w: value %d, set %v", ErrNotInSet, fieldValue, set),
+		})
 	}
 	return nil
 }
