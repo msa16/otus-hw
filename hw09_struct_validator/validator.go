@@ -91,7 +91,7 @@ func validateImpl(v interface{}, errors *ValidationErrors) error {
 		case fieldVal.CanInt():
 			programError = validateInt(validateTags, structField.Name, int(fieldVal.Int()), errors)
 		case fieldVal.Type().Kind() == reflect.String:
-			programError = validateString(validateTags, structField.Name, fieldVal.String(), errors)
+			programError = validateString(validateTags, structField.Name, fieldVal.String(), errors, nil)
 		case fieldVal.Type().Kind() == reflect.Slice:
 			programError = validateSlice(validateTags, structField.Name, fieldVal, errors)
 		case fieldVal.Kind() == reflect.Struct && validate == "nested":
@@ -107,8 +107,9 @@ func validateImpl(v interface{}, errors *ValidationErrors) error {
 
 func validateSlice(validateTags []string, fieldName string, fieldVal reflect.Value, errors *ValidationErrors) error {
 	if fieldVal.Type().Elem().Kind() == reflect.String {
+		regExpCache := make(map[string]*regexp.Regexp)
 		for i := 0; i < fieldVal.Len(); i++ {
-			programError := validateString(validateTags, fieldName, fieldVal.Index(i).String(), errors)
+			programError := validateString(validateTags, fieldName, fieldVal.Index(i).String(), errors, regExpCache)
 			if programError != nil {
 				return programError
 			}
@@ -124,7 +125,9 @@ func validateSlice(validateTags []string, fieldName string, fieldVal reflect.Val
 	return nil
 }
 
-func validateString(validateTags []string, fieldName string, fieldValue string, errors *ValidationErrors) error {
+func validateString(validateTags []string, fieldName string, fieldValue string, errors *ValidationErrors,
+	regExpCache map[string]*regexp.Regexp,
+) error {
 	for _, tag := range validateTags {
 		t := strings.Split(tag, ":")
 		if len(t) != 2 {
@@ -145,17 +148,7 @@ func validateString(validateTags []string, fieldName string, fieldValue string, 
 				})
 			}
 		case "regexp":
-			rg, err := regexp.Compile(t[1])
-			if err != nil {
-				return fmt.Errorf("%w: %s", ErrInvalidRegExp, t[1])
-			}
-			matched := rg.MatchString(fieldValue)
-			if !matched {
-				*errors = append(*errors, ValidationError{
-					Field: fieldName,
-					Err:   fmt.Errorf("%w: %s", ErrRegExpNotMatch, t[1]),
-				})
-			}
+			return validateStringRegExp(t[1], fieldName, fieldValue, errors, regExpCache)
 		case "in":
 			set := strings.Split(t[1], ",")
 			found := false
@@ -174,6 +167,32 @@ func validateString(validateTags []string, fieldName string, fieldValue string, 
 		default:
 			return fmt.Errorf("%w: %s", ErrUnknownValidator, t[0])
 		}
+	}
+	return nil
+}
+
+func validateStringRegExp(regExpTemplate string, fieldName string, fieldValue string, errors *ValidationErrors,
+	regExpCache map[string]*regexp.Regexp,
+) error {
+	var rg *regexp.Regexp
+	if regExpCache != nil {
+		rg = regExpCache[regExpTemplate]
+	}
+	if rg == nil {
+		rgNew, err := regexp.Compile(regExpTemplate)
+		if err != nil {
+			return fmt.Errorf("%w: %s", ErrInvalidRegExp, regExpTemplate)
+		}
+		rg = rgNew
+		if regExpCache != nil {
+			regExpCache[regExpTemplate] = rg
+		}
+	}
+	if !rg.MatchString(fieldValue) {
+		*errors = append(*errors, ValidationError{
+			Field: fieldName,
+			Err:   fmt.Errorf("%w: %s", ErrRegExpNotMatch, regExpTemplate),
+		})
 	}
 	return nil
 }

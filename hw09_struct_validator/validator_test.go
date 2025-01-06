@@ -64,8 +64,9 @@ type (
 		Data []int `validate:"min:777|max:999"`
 	}
 	Staff struct {
-		User `validate:"nested"`
-		Unit string `validate:"in:бухгалтерия,транспортный цех"`
+		User        `validate:"nested"`
+		Unit        string   `validate:"in:бухгалтерия,транспортный цех"`
+		BankAccount []string `validate:"regexp:\\d+|len:20"`
 	}
 )
 
@@ -157,12 +158,14 @@ func TestValidate(t *testing.T) {
 					ID: "0", Name: "Somebody", Age: 75, Email: "some@ya.ru", Role: "admin",
 					Phones: []string{"79169999999", "79169999998"},
 				},
-				Unit: "склад",
+				Unit:        "склад",
+				BankAccount: []string{"12345678901234567890", "ABCDEABCDEABCDEABCDE", "20202810101010101010"},
 			},
 			expectedErr: ValidationErrors{
 				{Field: "ID", Err: ErrWrongLen},
 				{Field: "Age", Err: ErrMaxFailed},
 				{Field: "Unit", Err: ErrNotInSet},
+				{Field: "BankAccount", Err: ErrRegExpNotMatch},
 			},
 		},
 	}
