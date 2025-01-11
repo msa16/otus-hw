@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	//nolint:depguard
 	"github.com/stretchr/testify/require"
 )
 
@@ -61,5 +62,45 @@ func TestTelnetClient(t *testing.T) {
 		}()
 
 		wg.Wait()
+	})
+
+	t.Run("connection timeout", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+
+		client := NewTelnetClient(l.Addr().String(), time.Nanosecond, io.NopCloser(&bytes.Buffer{}), &bytes.Buffer{})
+		require.Error(t, client.Connect())
+	})
+	t.Run("connect to nonexistent server", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+		serverAddr := l.Addr().String()
+		require.NoError(t, l.Close())
+
+		client := NewTelnetClient(serverAddr, time.Second*10, io.NopCloser(&bytes.Buffer{}), &bytes.Buffer{})
+		err = client.Connect()
+		require.EqualError(t, err, "dial tcp "+serverAddr+": connect: connection refused")
+	})
+	t.Run("send to closed connection", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+
+		in := &bytes.Buffer{}
+		client := NewTelnetClient(l.Addr().String(), 10*time.Second, io.NopCloser(in), &bytes.Buffer{})
+		require.NoError(t, client.Connect())
+		require.NoError(t, l.Close())
+
+		in.WriteString("test\n")
+		require.Error(t, client.Send())
+	})
+	t.Run("receive from closed connection", func(t *testing.T) {
+		l, err := net.Listen("tcp", "127.0.0.1:")
+		require.NoError(t, err)
+
+		client := NewTelnetClient(l.Addr().String(), 10*time.Second, io.NopCloser(&bytes.Buffer{}), &bytes.Buffer{})
+		require.NoError(t, client.Connect())
+		require.NoError(t, l.Close())
+
+		require.Error(t, client.Receive())
 	})
 }
