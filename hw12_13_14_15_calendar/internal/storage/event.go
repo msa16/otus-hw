@@ -11,13 +11,14 @@ type Event struct {
 	StartTime   time.Time
 	StopTime    time.Time
 	Description string
-	UserID      string
+	UserID      int64
 	Reminder    time.Duration
 }
 
 type EventRepo interface {
-	CreateEvent(ctx context.Context, event Event) error
-	UpdateEvent(ctx context.Context, event Event) error
+	CreateEvent(ctx context.Context, event Event) (string, error)
+	// по ТЗ Обновить (ID события, событие)
+	UpdateEvent(ctx context.Context, id string, event Event) error
 	DeleteEvent(ctx context.Context, id string) error
 	GetEvent(ctx context.Context, id string) (Event, error)
 	ListEventsDay(ctx context.Context, StartTime time.Time) ([]Event, error)

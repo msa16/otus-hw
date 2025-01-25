@@ -2,6 +2,7 @@ package memorystorage
 
 import (
 	"context"
+	"fmt"
 	"sync"
 	"time"
 
@@ -16,11 +17,11 @@ type Storage struct {
 	all map[string]*storage.Event
 	// события по пользователям и времени. Ограничение: для одного пользователя в один момент времени может начинаться только одно событие.
 	// другие пересечения событий по времени считаем допустимым
-	byUser map[string]userEvents
+	byUser map[int64]userEvents
 }
 
 func New() *Storage {
-	return &Storage{mu: sync.RWMutex{}, all: make(map[string]*storage.Event), byUser: make(map[string]userEvents)}
+	return &Storage{mu: sync.RWMutex{}, all: make(map[string]*storage.Event), byUser: make(map[int64]userEvents)}
 }
 
 func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) (string, error) {
@@ -44,10 +45,13 @@ func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) (string,
 	return event.ID, nil
 }
 
-func (s *Storage) UpdateEvent(ctx context.Context, event storage.Event) error {
+func (s *Storage) UpdateEvent(ctx context.Context, id string, event storage.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// проверки
+	if event.ID != id {
+		return fmt.Errorf("%w: id=%v event.ID=%v", storage.ErrInvalidArgiments, id, event.ID)
+	}
 	current := s.all[event.ID]
 	if current == nil {
 		return storage.ErrEventNotFound

@@ -6,7 +6,7 @@ create table event(
   startTime timestamp with time zone,
   stopTime timestamp with time zone,
   description text,
-  userID text,
+  userID bigint,
   reminder interval
 );
 create unique index xpk_event_id on event (id);   

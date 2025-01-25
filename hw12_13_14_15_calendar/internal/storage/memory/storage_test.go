@@ -10,7 +10,8 @@ import (
 )
 
 const (
-	badID = "bad_id"
+	badEventID = "bad_event_id"
+	badUserID  = 777
 )
 
 func TestStorage(t *testing.T) {
@@ -21,13 +22,13 @@ func TestStorage(t *testing.T) {
 		StartTime:   time.Date(2025, 1, 1, 11, 0, 0, 0, time.UTC),
 		StopTime:    time.Date(2025, 1, 1, 11, 30, 0, 0, time.UTC),
 		Description: "description 1",
-		UserID:      "1"}
+		UserID:      1}
 	event2 := storage.Event{
 		Title:       "title 2",
 		StartTime:   time.Date(2025, 1, 2, 11, 10, 0, 0, time.UTC),
 		StopTime:    time.Date(2025, 1, 2, 12, 0, 0, 0, time.UTC),
 		Description: "description 2",
-		UserID:      "1"}
+		UserID:      1}
 
 	t.Run("add event 1", func(t *testing.T) {
 		id, err := repo.CreateEvent(ctx, event1)
@@ -78,39 +79,39 @@ func TestStorage(t *testing.T) {
 		require.Equal(t, event, &event2)
 	})
 	t.Run("get event ErrEventNotFound", func(t *testing.T) {
-		_, err := repo.GetEvent(ctx, badID)
+		_, err := repo.GetEvent(ctx, badEventID)
 		require.ErrorIs(t, err, storage.ErrEventNotFound)
 	})
 	t.Run("update ErrEventNotFound", func(t *testing.T) {
 		savedID := event1.ID
-		event1.ID = badID
-		err := repo.UpdateEvent(ctx, event1)
+		event1.ID = badEventID
+		err := repo.UpdateEvent(ctx, badEventID, event1)
 		event1.ID = savedID
 		require.ErrorIs(t, err, storage.ErrEventNotFound)
 	})
 	t.Run("update ErrUpdateUserID", func(t *testing.T) {
 		savedUserID := event1.UserID
-		event1.UserID = badID
-		err := repo.UpdateEvent(ctx, event1)
+		event1.UserID = badUserID
+		err := repo.UpdateEvent(ctx, event1.ID, event1)
 		event1.UserID = savedUserID
 		require.ErrorIs(t, err, storage.ErrUpdateUserID)
 	})
 	t.Run("update ErrInvalidStopTime", func(t *testing.T) {
 		savedStopTime := event1.StopTime
 		event1.StopTime = time.Date(2025, 1, 1, 10, 0, 0, 0, time.UTC)
-		err := repo.UpdateEvent(ctx, event1)
+		err := repo.UpdateEvent(ctx, event1.ID, event1)
 		event1.StopTime = savedStopTime
 		require.ErrorIs(t, err, storage.ErrInvalidStopTime)
 	})
 	t.Run("update ErrDateBusy", func(t *testing.T) {
 		savedID := event1.ID
 		event1.ID = event2.ID
-		err := repo.UpdateEvent(ctx, event1)
+		err := repo.UpdateEvent(ctx, event1.ID, event1)
 		event1.ID = savedID
 		require.ErrorIs(t, err, storage.ErrDateBusy)
 	})
 	t.Run("update event ok", func(t *testing.T) {
-		err := repo.UpdateEvent(ctx, event1)
+		err := repo.UpdateEvent(ctx, event1.ID, event1)
 		require.NoError(t, err)
 		require.Equal(t, len(repo.all), 2)
 		require.Equal(t, len(repo.byUser), 1)
@@ -137,7 +138,7 @@ func TestStorage(t *testing.T) {
 	})
 
 	t.Run("delete event ErrEventNotFound", func(t *testing.T) {
-		err := repo.DeleteEvent(ctx, badID)
+		err := repo.DeleteEvent(ctx, badEventID)
 		require.ErrorIs(t, err, storage.ErrEventNotFound)
 	})
 	t.Run("delete event ok", func(t *testing.T) {
