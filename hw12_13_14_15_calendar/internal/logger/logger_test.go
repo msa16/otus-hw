@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require" //nolint:depguard
 )
 
 func TestLogger(t *testing.T) {

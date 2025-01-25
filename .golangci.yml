@@ -18,6 +18,10 @@ issues:
         - gocyclo
         - gosec
 
+  exclude-dirs:
+    # от ошибок линтеров на исходники golang в пайплайне github - Error: ../../../../../../opt/hostedtoolcache/go/1.23.4
+    - /opt/hostedtoolcache/go/
+
 linters:
   disable-all: true
   enable:

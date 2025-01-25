@@ -6,17 +6,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage"
+	"github.com/google/uuid"                                           //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage" //nolint:depguard
 )
 
 type userEvents map[time.Time]*storage.Event
+
 type Storage struct {
 	mu sync.RWMutex
 	// все события
 	all map[string]*storage.Event
-	// события по пользователям и времени. Ограничение: для одного пользователя в один момент времени может начинаться только одно событие.
-	// другие пересечения событий по времени считаем допустимым
+	// события по пользователям и времени. Ограничение: для одного пользователя в один момент времени может начинаться
+	// только одно событие. другие пересечения событий по времени считаем допустимым
 	byUser map[int64]userEvents
 }
 
@@ -24,7 +25,7 @@ func New() *Storage {
 	return &Storage{mu: sync.RWMutex{}, all: make(map[string]*storage.Event), byUser: make(map[int64]userEvents)}
 }
 
-func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) (string, error) {
+func (s *Storage) CreateEvent(_ context.Context, event storage.Event) (string, error) {
 	if event.StopTime.Before(event.StartTime) {
 		return "", storage.ErrInvalidStopTime
 	}
@@ -45,7 +46,7 @@ func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) (string,
 	return event.ID, nil
 }
 
-func (s *Storage) UpdateEvent(ctx context.Context, id string, event storage.Event) error {
+func (s *Storage) UpdateEvent(_ context.Context, id string, event storage.Event) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// проверки
@@ -80,7 +81,7 @@ func (s *Storage) UpdateEvent(ctx context.Context, id string, event storage.Even
 	return nil
 }
 
-func (s *Storage) DeleteEvent(ctx context.Context, id string) error {
+func (s *Storage) DeleteEvent(_ context.Context, id string) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	// проверки
@@ -94,30 +95,31 @@ func (s *Storage) DeleteEvent(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *Storage) listEventsInt(StartTime time.Time, StopTime time.Time) []storage.Event {
+func (s *Storage) listEventsInt(startTime time.Time, stopTime time.Time) []storage.Event {
 	result := make([]storage.Event, 0)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, v := range s.all {
-		if v.StartTime.Compare(StartTime) >= 0 && v.StartTime.Compare(StopTime) <= 0 {
+		if v.StartTime.Compare(startTime) >= 0 && v.StartTime.Compare(stopTime) <= 0 {
 			result = append(result, *v)
 		}
 	}
 	return result
 }
 
-func (s *Storage) ListEventsDay(ctx context.Context, StartTime time.Time) ([]storage.Event, error) {
-	return s.listEventsInt(StartTime, StartTime.Add(time.Hour*24)), nil
+func (s *Storage) ListEventsDay(_ context.Context, startTime time.Time) ([]storage.Event, error) {
+	return s.listEventsInt(startTime, startTime.Add(time.Hour*24)), nil
 }
 
-func (s *Storage) ListEventsWeek(ctx context.Context, StartTime time.Time) ([]storage.Event, error) {
-	return s.listEventsInt(StartTime, StartTime.Add(time.Hour*24*7)), nil
-}
-func (s *Storage) ListEventsMonth(ctx context.Context, StartTime time.Time) ([]storage.Event, error) {
-	return s.listEventsInt(StartTime, StartTime.AddDate(0, 1, 0)), nil
+func (s *Storage) ListEventsWeek(_ context.Context, startTime time.Time) ([]storage.Event, error) {
+	return s.listEventsInt(startTime, startTime.Add(time.Hour*24*7)), nil
 }
 
-func (s *Storage) GetEvent(ctx context.Context, id string) (*storage.Event, error) {
+func (s *Storage) ListEventsMonth(_ context.Context, startTime time.Time) ([]storage.Event, error) {
+	return s.listEventsInt(startTime, startTime.AddDate(0, 1, 0)), nil
+}
+
+func (s *Storage) GetEvent(_ context.Context, id string) (*storage.Event, error) {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	current := s.all[id]

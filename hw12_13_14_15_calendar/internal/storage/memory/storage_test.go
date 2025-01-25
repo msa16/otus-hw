@@ -5,8 +5,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage"
-	"github.com/stretchr/testify/require"
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage" //nolint:depguard
+	"github.com/stretchr/testify/require"                              //nolint:depguard
 )
 
 const (
@@ -22,13 +22,15 @@ func TestStorage(t *testing.T) {
 		StartTime:   time.Date(2025, 1, 1, 11, 0, 0, 0, time.UTC),
 		StopTime:    time.Date(2025, 1, 1, 11, 30, 0, 0, time.UTC),
 		Description: "description 1",
-		UserID:      1}
+		UserID:      1,
+	}
 	event2 := storage.Event{
 		Title:       "title 2",
 		StartTime:   time.Date(2025, 1, 2, 11, 10, 0, 0, time.UTC),
 		StopTime:    time.Date(2025, 1, 2, 12, 0, 0, 0, time.UTC),
 		Description: "description 2",
-		UserID:      1}
+		UserID:      1,
+	}
 
 	t.Run("add event 1", func(t *testing.T) {
 		id, err := repo.CreateEvent(ctx, event1)
@@ -150,5 +152,4 @@ func TestStorage(t *testing.T) {
 		require.Equal(t, repo.byUser[event2.UserID][event2.StartTime], &event2)
 		require.Equal(t, repo.all[event2.ID], &event2)
 	})
-
 }

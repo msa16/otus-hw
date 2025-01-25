@@ -19,7 +19,7 @@ func New(level string, fileName string) *Logger {
 		log.Fatalf("Error opening file: %v", err)
 	}
 
-	var programLevel = new(slog.LevelVar)
+	programLevel := new(slog.LevelVar)
 	if err := programLevel.UnmarshalText([]byte(level)); err != nil {
 		log.Printf("Error parsing level: %v. Acceptable values: DEBUG, INFO, WARN, ERROR. Will use INFO\n", err)
 		programLevel.Set(slog.LevelInfo)

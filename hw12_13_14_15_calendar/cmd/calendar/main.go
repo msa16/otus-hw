@@ -8,10 +8,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger"
-	internalhttp "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/server/http"
-	memorystorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/memory"
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"                          //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger"                       //nolint:depguard
+	internalhttp "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/server/http"     //nolint:depguard
+	memorystorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/memory" //nolint:depguard
 )
 
 var configFile string
