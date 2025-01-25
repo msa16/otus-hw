@@ -106,19 +106,19 @@ func (s *Storage) GetEvent(ctx context.Context, id string) (*storage.Event, erro
 	return &event, nil
 }
 
-func (s *Storage) ListEventsDay(ctx context.Context, startTime time.Time) ([]storage.Event, error) {
+func (s *Storage) ListEventsDay(ctx context.Context, startTime time.Time) ([]*storage.Event, error) {
 	return s.listEventsInt(ctx, startTime, startTime.Add(time.Hour*24))
 }
 
-func (s *Storage) ListEventsWeek(ctx context.Context, startTime time.Time) ([]storage.Event, error) {
+func (s *Storage) ListEventsWeek(ctx context.Context, startTime time.Time) ([]*storage.Event, error) {
 	return s.listEventsInt(ctx, startTime, startTime.Add(time.Hour*24*7))
 }
 
-func (s *Storage) ListEventsMonth(ctx context.Context, startTime time.Time) ([]storage.Event, error) {
+func (s *Storage) ListEventsMonth(ctx context.Context, startTime time.Time) ([]*storage.Event, error) {
 	return s.listEventsInt(ctx, startTime, startTime.AddDate(0, 1, 0))
 }
 
-func (s *Storage) listEventsInt(ctx context.Context, startTime time.Time, stopTime time.Time) ([]storage.Event, error) {
+func (s *Storage) listEventsInt(ctx context.Context, startTime time.Time, stopTime time.Time) ([]*storage.Event, error) {
 	rows, err := s.db.QueryContext(ctx, `select id, title, starttime, stoptime, description, userid, reminder 
 	from event where starttime >= $1 and stoptime <= $2`, startTime, stopTime)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
@@ -126,9 +126,9 @@ func (s *Storage) listEventsInt(ctx context.Context, startTime time.Time, stopTi
 	}
 	defer rows.Close()
 
-	result := make([]storage.Event, 0)
+	result := make([]*storage.Event, 0)
 	for rows.Next() {
-		event := storage.Event{}
+		event := &storage.Event{}
 		err := rows.Scan(&event.ID, &event.Title, &event.StartTime, &event.StopTime, &event.Description, &event.UserID,
 			&event.Reminder)
 		if err != nil {

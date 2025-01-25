@@ -95,27 +95,27 @@ func (s *Storage) DeleteEvent(_ context.Context, id string) error {
 	return nil
 }
 
-func (s *Storage) listEventsInt(startTime time.Time, stopTime time.Time) []storage.Event {
-	result := make([]storage.Event, 0)
+func (s *Storage) listEventsInt(startTime time.Time, stopTime time.Time) []*storage.Event {
+	result := make([]*storage.Event, 0)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
 	for _, v := range s.all {
 		if v.StartTime.Compare(startTime) >= 0 && v.StartTime.Compare(stopTime) <= 0 {
-			result = append(result, *v)
+			result = append(result, v)
 		}
 	}
 	return result
 }
 
-func (s *Storage) ListEventsDay(_ context.Context, startTime time.Time) ([]storage.Event, error) {
+func (s *Storage) ListEventsDay(_ context.Context, startTime time.Time) ([]*storage.Event, error) {
 	return s.listEventsInt(startTime, startTime.Add(time.Hour*24)), nil
 }
 
-func (s *Storage) ListEventsWeek(_ context.Context, startTime time.Time) ([]storage.Event, error) {
+func (s *Storage) ListEventsWeek(_ context.Context, startTime time.Time) ([]*storage.Event, error) {
 	return s.listEventsInt(startTime, startTime.Add(time.Hour*24*7)), nil
 }
 
-func (s *Storage) ListEventsMonth(_ context.Context, startTime time.Time) ([]storage.Event, error) {
+func (s *Storage) ListEventsMonth(_ context.Context, startTime time.Time) ([]*storage.Event, error) {
 	return s.listEventsInt(startTime, startTime.AddDate(0, 1, 0)), nil
 }
 

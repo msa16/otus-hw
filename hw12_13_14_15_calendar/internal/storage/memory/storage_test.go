@@ -126,7 +126,7 @@ func TestStorage(t *testing.T) {
 		events, err := repo.ListEventsDay(ctx, event1.StartTime)
 		require.NoError(t, err)
 		require.Equal(t, len(events), 1)
-		require.Equal(t, events[0], event1)
+		require.Equal(t, *events[0], event1)
 	})
 	t.Run("list events week", func(t *testing.T) {
 		events, err := repo.ListEventsWeek(ctx, event1.StartTime)
