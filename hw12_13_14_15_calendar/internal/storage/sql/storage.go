@@ -7,6 +7,9 @@ import (
 	"fmt"
 	"time"
 
+	// Импортируем драйвер
+	_ "github.com/jackc/pgx/v5/stdlib" //nolint:depguard
+
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage" //nolint:depguard
 )
 
@@ -15,11 +18,11 @@ type Storage struct {
 	db          *sql.DB
 }
 
-func New(driver, dsn string) (*Storage, error) {
+func New(driver, dsn string) *Storage {
 	return &Storage{
 		driver: driver,
 		dsn:    dsn,
-	}, nil
+	}
 }
 
 func (s *Storage) Connect(ctx context.Context) error {
@@ -57,7 +60,7 @@ func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) (string,
 	return id, nil
 }
 
-func (s *Storage) UpdateEvent(ctx context.Context, event storage.Event) error {
+func (s *Storage) UpdateEvent(ctx context.Context, id string, event storage.Event) error {
 	result, err := s.db.ExecContext(ctx, `update event 
 	SET title = $1, startTime = $2, stopTime = $3, description = $4, reminder = $5 WHERE id = $6 and userID = $7`,
 		event.Title, event.StartTime, event.StopTime, event.Description, event.Reminder, event.ID, event.UserID)

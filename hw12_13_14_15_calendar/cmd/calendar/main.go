@@ -12,6 +12,7 @@ import (
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger"                       //nolint:depguard
 	internalhttp "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/server/http"     //nolint:depguard
 	memorystorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/memory" //nolint:depguard
+	sqlstorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/sql"       //nolint:depguard
 )
 
 var configFile string
@@ -32,7 +33,20 @@ func main() {
 	logg := logger.New(config.Logger.Level, config.Logger.File)
 	defer logg.Close()
 
-	storage := memorystorage.New()
+	var storage app.Storage
+	if config.Storage == "sql" {
+		logg.Info("create sql storage, connecting to server...")
+		dbStorage := sqlstorage.New(config.Db.Driver, config.Db.Dsn)
+		err := dbStorage.Connect(context.Background())
+		if err != nil {
+			logg.Error("failed to connect to db: " + err.Error())
+			os.Exit(1) //nolint:gocritic
+		}
+		storage = dbStorage
+	} else {
+		logg.Info("create memory storage")
+		storage = memorystorage.New()
+	}
 	calendar := app.New(logg, storage)
 
 	server := internalhttp.NewServer(logg, calendar)
@@ -49,6 +63,13 @@ func main() {
 
 		if err := server.Stop(ctx); err != nil {
 			logg.Error("failed to stop http server: " + err.Error())
+		}
+
+		dbStorage, ok := storage.(*sqlstorage.Storage)
+		if ok {
+			if err := dbStorage.Close(ctx); err != nil {
+				logg.Error("failed to close database: " + err.Error())
+			}
 		}
 	}()
 
