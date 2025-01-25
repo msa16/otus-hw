@@ -26,7 +26,7 @@ func NewConfig(configFile string) Config {
 		log.Fatal(err.Error())
 	}
 
-	err = yaml.Unmarshal(confFile, &config)
+	err = yaml.Unmarshal(confFile, &config) //nolint:typecheck
 	if err != nil {
 		log.Fatal(err.Error())
 	}
