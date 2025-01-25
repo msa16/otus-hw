@@ -13,4 +13,5 @@ var (
 	ErrCreateEvent      = errors.New("can't create event")
 	ErrUpdateEvent      = errors.New("can't update event")
 	ErrDeleteEvent      = errors.New("can't delete event")
+	ErrReadEvent        = errors.New("can't read event")
 )

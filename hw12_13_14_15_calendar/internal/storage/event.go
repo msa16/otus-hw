@@ -21,7 +21,7 @@ type EventRepo interface {
 	UpdateEvent(ctx context.Context, id string, event Event) error
 	DeleteEvent(ctx context.Context, id string) error
 	GetEvent(ctx context.Context, id string) (Event, error)
-	ListEventsDay(ctx context.Context, StartTime time.Time) ([]Event, error)
-	ListEventsWeek(ctx context.Context, StartTime time.Time) ([]Event, error)
-	ListEventsMonth(ctx context.Context, StartTime time.Time) ([]Event, error)
+	ListEventsDay(ctx context.Context, startTime time.Time) ([]Event, error)
+	ListEventsWeek(ctx context.Context, startTime time.Time) ([]Event, error)
+	ListEventsMonth(ctx context.Context, startTime time.Time) ([]Event, error)
 }
