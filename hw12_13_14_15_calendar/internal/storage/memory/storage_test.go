@@ -2,6 +2,8 @@ package memorystorage
 
 import (
 	"context"
+	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -152,4 +154,90 @@ func TestStorage(t *testing.T) {
 		require.Equal(t, repo.byUser[event2.UserID][event2.StartTime], &event2)
 		require.Equal(t, repo.all[event2.ID], &event2)
 	})
+}
+
+func TestStorageConcurrency(t *testing.T) {
+	const threadCount = 10
+	const objectPerThread = 10000
+	ctx := context.Background()
+	repo := New()
+	afterCreate := make(chan string)
+	afterReadUpdate := make(chan string)
+
+	var wgCreate sync.WaitGroup
+	// создаем объекты в разных потоках
+	for i := 0; i < threadCount; i++ {
+		wgCreate.Add(1)
+		go func(userID int64) {
+			defer wgCreate.Done()
+			startTime := time.Date(2020, 1, 1, 0, 0, 0, 0, time.UTC)
+			stopTime := startTime.Add(time.Hour)
+			for i := 0; i < objectPerThread; i++ {
+				id, err := repo.CreateEvent(ctx, storage.Event{UserID: userID, StartTime: startTime, StopTime: stopTime})
+				require.NoError(t, err)
+				require.NotEmpty(t, id)
+				afterCreate <- id
+				startTime = stopTime
+				stopTime = startTime.Add(time.Hour)
+			}
+		}(int64(i))
+	}
+
+	go func() {
+		wgCreate.Wait()
+		close(afterCreate)
+	}()
+
+	var readUpdateCount uint64
+	var wgReadUpdate sync.WaitGroup
+	// читаем/меняем объекты в разных потоках
+	for i := 0; i < threadCount; i++ {
+		wgReadUpdate.Add(1)
+		go func() {
+			defer wgReadUpdate.Done()
+			for id := range afterCreate {
+				event, err := repo.GetEvent(ctx, id)
+				require.NoError(t, err)
+				require.NotNil(t, event)
+				require.Equal(t, id, event.ID)
+				atomic.AddUint64(&readUpdateCount, 1)
+
+				event.Description = event.ID
+				err = repo.UpdateEvent(ctx, id, *event)
+				require.NoError(t, err)
+				afterReadUpdate <- id
+			}
+		}()
+	}
+
+	go func() {
+		wgReadUpdate.Wait()
+		close(afterReadUpdate)
+	}()
+
+	var readDeleteCount uint64
+	var wgReadDelete sync.WaitGroup
+	// читаем и удаляем объекты в разных потоках
+	for i := 0; i < threadCount; i++ {
+		wgReadDelete.Add(1)
+		go func() {
+			defer wgReadDelete.Done()
+			for id := range afterReadUpdate {
+				event, err := repo.GetEvent(ctx, id)
+				require.NoError(t, err)
+				require.NotNil(t, event)
+				require.Equal(t, id, event.ID)
+				// проверяем что update работает
+				require.Equal(t, id, event.Description)
+
+				err2 := repo.DeleteEvent(ctx, id)
+				require.NoError(t, err2)
+				atomic.AddUint64(&readDeleteCount, 1)
+			}
+		}()
+	}
+	wgReadDelete.Wait()
+
+	require.Equal(t, uint64(threadCount*objectPerThread), readUpdateCount)
+	require.Equal(t, uint64(threadCount*objectPerThread), readDeleteCount)
 }
