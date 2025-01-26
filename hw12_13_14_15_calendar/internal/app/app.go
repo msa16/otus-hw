@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage"
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage" //nolint:depguard
 )
 
 type App struct {

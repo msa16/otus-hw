@@ -36,7 +36,7 @@ func main() {
 	var storage app.Storage
 	if config.Storage == "sql" {
 		logg.Info("create sql storage, connecting to server...")
-		dbStorage := sqlstorage.New(config.Db.Driver, config.Db.Dsn)
+		dbStorage := sqlstorage.New(config.DB.Driver, config.DB.Dsn)
 		err := dbStorage.Connect(context.Background())
 		if err != nil {
 			logg.Error("failed to connect to db: " + err.Error())
@@ -49,7 +49,7 @@ func main() {
 	}
 	calendar := app.New(logg, storage)
 
-	server := internalhttp.NewServer(logg, calendar)
+	server := internalhttp.NewServer(logg, calendar, config.Server.HTTP.Host, config.Server.HTTP.Port)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -78,6 +78,6 @@ func main() {
 	if err := server.Start(ctx); err != nil {
 		logg.Error("failed to start http server: " + err.Error())
 		cancel()
-		os.Exit(1) //nolint:gocritic
+		os.Exit(1)
 	}
 }

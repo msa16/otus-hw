@@ -14,7 +14,7 @@ type Config struct {
 	Logger  LoggerConf `yaml:"log"`
 	Server  ServerConf `yaml:"server"`
 	Storage string
-	Db      StorageConf
+	DB      StorageConf
 }
 
 type LoggerConf struct {
@@ -23,12 +23,12 @@ type LoggerConf struct {
 }
 
 type ServerConf struct {
-	Http AddrConf `yaml:"http"`
+	HTTP AddrConf `yaml:"http"`
 }
 
 type AddrConf struct {
 	Host string
-	Port string
+	Port int
 }
 
 type StorageConf struct {

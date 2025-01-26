@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"time"
 
-	// Импортируем драйвер
-	_ "github.com/jackc/pgx/v5/stdlib" //nolint:depguard
-
+	_ "github.com/jackc/pgx/v5/stdlib"                                 //nolint:depguard
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage" //nolint:depguard
 )
 
@@ -61,6 +59,9 @@ func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) (string,
 }
 
 func (s *Storage) UpdateEvent(ctx context.Context, id string, event storage.Event) error {
+	if event.ID != id {
+		return fmt.Errorf("%w: id=%v event.ID=%v", storage.ErrInvalidArgiments, id, event.ID)
+	}
 	result, err := s.db.ExecContext(ctx, `update event 
 	SET title = $1, startTime = $2, stopTime = $3, description = $4, reminder = $5 WHERE id = $6 and userID = $7`,
 		event.Title, event.StartTime, event.StopTime, event.Description, event.Reminder, event.ID, event.UserID)
@@ -121,7 +122,9 @@ func (s *Storage) ListEventsMonth(ctx context.Context, startTime time.Time) ([]*
 	return s.listEventsInt(ctx, startTime, startTime.AddDate(0, 1, 0))
 }
 
-func (s *Storage) listEventsInt(ctx context.Context, startTime time.Time, stopTime time.Time) ([]*storage.Event, error) {
+func (s *Storage) listEventsInt(ctx context.Context, startTime time.Time, stopTime time.Time) (
+	[]*storage.Event, error,
+) {
 	rows, err := s.db.QueryContext(ctx, `select id, title, starttime, stoptime, description, userid, reminder 
 	from event where starttime >= $1 and stoptime <= $2`, startTime, stopTime)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
