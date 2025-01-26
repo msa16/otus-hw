@@ -21,6 +21,8 @@ issues:
   exclude-dirs:
     # от ошибок линтеров на исходники golang в пайплайне github - Error: ../../../../../../opt/hostedtoolcache/go/1.23.4
     - /opt/hostedtoolcache/go/
+    # от ошибок линтеров на исходники драйвера Postgres
+    - ../../../../go/pkg/mod/github.com/jackc/
 
 linters:
   disable-all: true
