@@ -1,0 +1,11 @@
+log:
+  level: INFO
+  file: calendar.log
+server:
+  http:
+    port: 8080
+    host: 0.0.0.0
+storage: memory
+db:
+  driver: pgx
+  dsn: postgres://calendar:calendar@localhost:15432/calendar
