@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require" //nolint:depguard
 	"go.uber.org/goleak"
 )
 
@@ -66,5 +66,40 @@ func TestRun(t *testing.T) {
 
 		require.Equal(t, runTasksCount, int32(tasksCount), "not all tasks were completed")
 		require.LessOrEqual(t, int64(elapsedTime), int64(sumTime/2), "tasks were run sequentially?")
+	})
+
+	t.Run("ignore errors", func(t *testing.T) {
+		tasksCount := 50
+		tasks := make([]Task, 0, tasksCount)
+
+		var runTasksCount int32
+
+		for i := 0; i < tasksCount; i++ {
+			err := fmt.Errorf("error from task %d", i)
+			tasks = append(tasks, func() error {
+				time.Sleep(time.Millisecond * time.Duration(rand.Intn(100)))
+				atomic.AddInt32(&runTasksCount, 1)
+				return err
+			})
+		}
+
+		workersCount := 10
+		maxErrorsCount := -1
+		err := Run(tasks, workersCount, maxErrorsCount)
+
+		require.NoError(t, err)
+		require.Equal(t, tasksCount, int(runTasksCount), "not all tasks were completed")
+	})
+
+	t.Run("invalid routine count", func(t *testing.T) {
+		tasks := make([]Task, 0)
+		err := Run(tasks, -1, 1)
+		require.ErrorIs(t, err, ErrInvalidRoutineCount)
+	})
+
+	t.Run("empty task list", func(t *testing.T) {
+		tasks := make([]Task, 0)
+		err := Run(tasks, 10, 1)
+		require.NoError(t, err)
 	})
 }
