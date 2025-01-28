@@ -32,13 +32,9 @@ func Run(tasks []Task, n, m int) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for {
-				if task, ok := <-processingQueue; ok {
-					if err := task(); err != nil {
-						errorCount.Add(1)
-					}
-				} else {
-					return // channel closed by sender
+			for task := range processingQueue {
+				if err := task(); err != nil {
+					errorCount.Add(1)
 				}
 			}
 		}()
