@@ -32,24 +32,27 @@ func Run(tasks []Task, n, m int) error {
 		wg.Add(1)
 		go func() {
 			defer wg.Done()
-			for task := range processingQueue {
-				if m <= 0 || errorCount.Load() < errorCountMax {
+			for {
+				if task, ok := <-processingQueue; ok {
 					if err := task(); err != nil {
 						errorCount.Add(1)
 					}
+				} else {
+					return // channel closed by sender
 				}
 			}
 		}()
 	}
-	// fill tasks queue
+
+	var result error
 	for _, task := range tasks {
+		if errorCountMax > 0 && errorCount.Load() >= errorCountMax {
+			result = ErrErrorsLimitExceeded
+			break
+		}
 		processingQueue <- task
 	}
 	close(processingQueue)
 	wg.Wait()
-
-	if m > 0 && errorCount.Load() >= errorCountMax {
-		return ErrErrorsLimitExceeded
-	}
-	return nil
+	return result
 }
