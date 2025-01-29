@@ -1,0 +1,172 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Calendar API server
+paths:
+  /events:
+    get:
+      summary: Get all events
+      operationId: findEvents
+      parameters:
+        - name: startTime
+          in: query
+          required: true
+          description: events start time
+          schema:
+            type: string
+            format: date-time
+        - name: period
+          in: query
+          required: false
+          description: period from startTime - day, week, month
+          schema:
+            type: string
+      responses:
+        '200':
+          description: events response                
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Event'
+        default:
+          description: Unexpected error
+          content:            
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    post:
+      summary: Create new event
+      operationId: createEvent
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewEvent'
+      responses:
+        '200':
+          description: event response                
+          content:
+            application/json: 
+              schema: 
+                $ref: '#/components/schemas/Event'
+        default:
+          description: Unexpected error
+          content:            
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /events/{id}:
+    get:
+      summary: Get event by id
+      operationId: findEventById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: event id
+          schema:
+            type: string
+      responses:
+        '200':
+          description: event response                
+          content:            
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Event'        
+        default:
+          description: Unexpected error
+          content:            
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'    
+    delete:
+      summary: Delete event by id
+      operationId: deleteEventById
+      parameters:
+        - name: id        
+          in: path
+          required: true          
+          description: event id
+          schema:
+            type: string
+      responses:
+        '204':
+          description: event deleted
+        default:
+          description: Unexpected error 
+          content:            
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    put:
+      summary: Update event by id
+      operationId: updateEventById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: event id
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Event'  
+      responses:
+        '204':
+          description: event updated
+        default:
+          description: Unexpected error 
+          content:            
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  schemas:
+    Event:
+      allOf:
+        - $ref: '#/components/schemas/NewEvent'
+        - required:
+            - ID
+          properties:
+            ID:
+              type: string
+              example: 123e4567-e89b-12d3-a456-426655440000
+    NewEvent:
+      required:
+        - Title
+        - StartTime
+        - StopTime
+        - UserID
+      properties:
+        Title:
+          type: string
+          example: New event
+        StartTime:
+          type: string
+          format: date-time
+        StopTime:
+          type: string
+          format: date-time
+        Description:
+          type: string
+          example: This is a new event
+        UserID:
+          type: integer
+          format: int64
+          example: 1
+        Reminder:
+          type: string
+          format: period
+    Error:
+      required:
+        - message
+      properties:
+        message:
+          type: string  
+          description: "error message"
