@@ -15,6 +15,9 @@ import (
 
 // Error defines model for Error.
 type Error struct {
+	// Code error code
+	Code int `json:"code"`
+
 	// Message error message
 	Message string `json:"message"`
 }

@@ -8,30 +8,34 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger" //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app" //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/server/http/api"
 )
 
 type Server struct {
-	logger *logger.Logger
 	server *http.Server
-	app    Application
+	app    *app.App
 }
 
-type Application interface { // TODO
-}
+func NewServer(app *app.App, host string, port int) *Server {
+	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
+	apiServer := api.NewApiServer(app)
+	mux := http.NewServeMux()
+	// get an `http.Handler` that we can use
+	h := loggingMiddleware(app.Logger, api.HandlerFromMux(apiServer, mux))
 
-func NewServer(logger *logger.Logger, app Application, host string, port int) *Server {
 	server := &http.Server{
 		Addr:        net.JoinHostPort(host, strconv.Itoa(port)),
 		ReadTimeout: 30 * time.Second,
+		Handler:     h,
 	}
 	helloWorldHandler := http.HandlerFunc(helloWorld)
-	http.Handle("/hello", loggingMiddleware(logger, helloWorldHandler))
-	return &Server{logger: logger, server: server, app: app}
+	mux.Handle("/hello", loggingMiddleware(app.Logger, helloWorldHandler))
+	return &Server{server: server, app: app}
 }
 
 func (s *Server) Start(ctx context.Context) error {
-	s.logger.Info(fmt.Sprintf("starting http server at %s", s.server.Addr))
+	s.app.Logger.Info(fmt.Sprintf("starting http server at %s", s.server.Addr))
 
 	if err := s.server.ListenAndServe(); err != http.ErrServerClosed {
 		return err
@@ -44,7 +48,7 @@ func (s *Server) Stop(ctx context.Context) error {
 	if s.server == nil {
 		return nil
 	}
-	s.logger.Info("shutting down http server")
+	s.app.Logger.Info("shutting down http server")
 	return s.server.Shutdown(ctx)
 }
 

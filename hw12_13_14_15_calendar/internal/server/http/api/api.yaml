@@ -165,8 +165,12 @@ components:
           format: period
     Error:
       required:
+        - code
         - message
       properties:
+        code:
+          type: integer
+          description: "error code"
         message:
           type: string  
           description: "error message"
