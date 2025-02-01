@@ -51,7 +51,7 @@ paths:
           content:
             application/json: 
               schema: 
-                $ref: '#/components/schemas/Event'
+                $ref: '#/components/schemas/EventID'
         default:
           description: Unexpected error
           content:            
@@ -131,12 +131,15 @@ components:
     Event:
       allOf:
         - $ref: '#/components/schemas/NewEvent'
-        - required:
-            - ID
-          properties:
-            ID:
-              type: string
-              example: 123e4567-e89b-12d3-a456-426655440000
+        - $ref: '#/components/schemas/EventID'
+    EventID:
+      required:
+        - ID
+      properties: 
+        ID: 
+          type: string
+          description: event id
+          example: 123e4567-e89b-12d3-a456-426655440000
     NewEvent:
       required:
         - Title

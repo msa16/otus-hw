@@ -1,6 +1,6 @@
 log:
   level: INFO
-  file: calendar.log
+  file: /tmp/calendar.log
 server:
   http:
     port: 8080
