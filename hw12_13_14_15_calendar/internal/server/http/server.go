@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app" //nolint:depguard
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/server/http/api"
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"             //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/server/http/api" //nolint:depguard
 )
 
 type Server struct {
@@ -18,8 +18,9 @@ type Server struct {
 }
 
 func NewServer(app *app.App, host string, port int) *Server {
-	// create a type that satisfies the `api.ServerInterface`, which contains an implementation of every operation from the generated code
-	apiServer := api.NewApiServer(app)
+	// create a type that satisfies the `api.ServerInterface`, which contains an implementation
+	// of every operation from the generated code
+	apiServer := api.NewAPIServer(app)
 	mux := http.NewServeMux()
 	// get an `http.Handler` that we can use
 	h := loggingMiddleware(app.Logger, api.HandlerFromMux(apiServer, mux))

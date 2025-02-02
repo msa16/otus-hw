@@ -4,25 +4,26 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage"
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"     //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage" //nolint:depguard
 )
 
-// ensure that we've conformed to the `ServerInterface` with a compile-time check
-var _ ServerInterface = (*ApiServer)(nil)
+// ensure that we've conformed to the `ServerInterface` with a compile-time check.
+var _ ServerInterface = (*Server)(nil)
 
-type ApiServer struct {
+type Server struct {
 	app *app.App
 }
 
-func NewApiServer(app *app.App) *ApiServer {
-	return &ApiServer{app: app}
+func NewAPIServer(app *app.App) *Server {
+	return &Server{app: app}
 }
 
-func (s *ApiServer) FindEvents(w http.ResponseWriter, r *http.Request, params FindEventsParams) {
+func (s *Server) FindEvents(w http.ResponseWriter, r *http.Request, params FindEventsParams) {
 	var stEvents []*storage.Event
 	var err error
 	switch *params.Period {
@@ -34,11 +35,11 @@ func (s *ApiServer) FindEvents(w http.ResponseWriter, r *http.Request, params Fi
 		stEvents, err = s.app.Storage.ListEventsMonth(r.Context(), params.StartTime)
 	}
 	if err != nil {
-		sendApiError(w, storageErrorToApiErrorCode(err), err.Error())
+		sendAPIError(w, storageErrorToAPIErrorCode(err), err.Error())
 		return
 	}
 
-	var result []Event
+	result := make([]Event, 0, len(stEvents))
 	for _, stEvent := range stEvents {
 		reminder := stEvent.Reminder.String()
 		event := Event{
@@ -56,16 +57,16 @@ func (s *ApiServer) FindEvents(w http.ResponseWriter, r *http.Request, params Fi
 	_ = json.NewEncoder(w).Encode(result)
 }
 
-func (s *ApiServer) CreateEvent(w http.ResponseWriter, r *http.Request) {
+func (s *Server) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	// We expect a NewEvent object in the request body.
 	var newEvent NewEvent
 	if err := json.NewDecoder(r.Body).Decode(&newEvent); err != nil {
-		sendApiError(w, http.StatusBadRequest, "Invalid format for NewEvent")
+		sendAPIError(w, http.StatusBadRequest, "Invalid format for NewEvent")
 		return
 	}
 	reminder, err := time.ParseDuration(*newEvent.Reminder)
 	if err != nil {
-		sendApiError(w, http.StatusBadRequest, "Invalid format for Reminder")
+		sendAPIError(w, http.StatusBadRequest, "Invalid format for Reminder")
 		return
 	}
 
@@ -82,7 +83,7 @@ func (s *ApiServer) CreateEvent(w http.ResponseWriter, r *http.Request) {
 
 	id, err := s.app.Storage.CreateEvent(r.Context(), storageEvent)
 	if err != nil {
-		sendApiError(w, storageErrorToApiErrorCode(err), err.Error())
+		sendAPIError(w, storageErrorToAPIErrorCode(err), err.Error())
 		return
 	}
 	eventID := EventID{ID: id}
@@ -90,19 +91,19 @@ func (s *ApiServer) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(eventID)
 }
 
-func (s *ApiServer) DeleteEventById(w http.ResponseWriter, r *http.Request, id string) {
+func (s *Server) DeleteEventByID(w http.ResponseWriter, r *http.Request, id string) {
 	err := s.app.Storage.DeleteEvent(r.Context(), id)
 	if err != nil {
-		sendApiError(w, storageErrorToApiErrorCode(err), err.Error())
+		sendAPIError(w, storageErrorToAPIErrorCode(err), err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func (s *ApiServer) FindEventById(w http.ResponseWriter, r *http.Request, id string) {
+func (s *Server) FindEventByID(w http.ResponseWriter, r *http.Request, id string) {
 	stEvent, err := s.app.Storage.GetEvent(r.Context(), id)
 	if err != nil {
-		sendApiError(w, storageErrorToApiErrorCode(err), err.Error())
+		sendAPIError(w, storageErrorToAPIErrorCode(err), err.Error())
 		return
 	}
 
@@ -120,16 +121,16 @@ func (s *ApiServer) FindEventById(w http.ResponseWriter, r *http.Request, id str
 	_ = json.NewEncoder(w).Encode(resp)
 }
 
-func (s *ApiServer) UpdateEventById(w http.ResponseWriter, r *http.Request, id string) {
+func (s *Server) UpdateEventByID(w http.ResponseWriter, r *http.Request, id string) {
 	// We expect a Event object in the request body.
 	var event Event
 	if err := json.NewDecoder(r.Body).Decode(&event); err != nil {
-		sendApiError(w, http.StatusBadRequest, "Invalid format for Event")
+		sendAPIError(w, http.StatusBadRequest, "Invalid format for Event")
 		return
 	}
 	reminder, err := time.ParseDuration(*event.Reminder)
 	if err != nil {
-		sendApiError(w, http.StatusBadRequest, "Invalid format for Reminder")
+		sendAPIError(w, http.StatusBadRequest, "Invalid format for Reminder")
 		return
 	}
 
@@ -143,13 +144,13 @@ func (s *ApiServer) UpdateEventById(w http.ResponseWriter, r *http.Request, id s
 		Reminder:    reminder,
 	})
 	if err != nil {
-		sendApiError(w, storageErrorToApiErrorCode(err), err.Error())
+		sendAPIError(w, storageErrorToAPIErrorCode(err), err.Error())
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
 }
 
-func sendApiError(w http.ResponseWriter, code int, message string) {
+func sendAPIError(w http.ResponseWriter, code int, message string) {
 	apiErr := Error{
 		Code:    code,
 		Message: message,
@@ -158,15 +159,21 @@ func sendApiError(w http.ResponseWriter, code int, message string) {
 	_ = json.NewEncoder(w).Encode(apiErr)
 }
 
-func storageErrorToApiErrorCode(err error) int {
-	switch err {
-	case nil:
+func storageErrorToAPIErrorCode(err error) int {
+	switch {
+	case err == nil:
 		return http.StatusOK
-	case storage.ErrDateBusy, storage.ErrInvalidArgiments, storage.ErrUpdateUserID, storage.ErrInvalidStopTime:
+	case errors.Is(err, storage.ErrDateBusy) ||
+		errors.Is(err, storage.ErrInvalidArgiments) ||
+		errors.Is(err, storage.ErrUpdateUserID) ||
+		errors.Is(err, storage.ErrInvalidStopTime):
 		return http.StatusBadRequest
-	case storage.ErrCreateEvent, storage.ErrUpdateEvent, storage.ErrDeleteEvent, storage.ErrReadEvent:
+	case errors.Is(err, storage.ErrCreateEvent) ||
+		errors.Is(err, storage.ErrUpdateEvent) ||
+		errors.Is(err, storage.ErrDeleteEvent) ||
+		errors.Is(err, storage.ErrReadEvent):
 		return http.StatusInternalServerError
-	case storage.ErrEventNotFound:
+	case errors.Is(err, storage.ErrEventNotFound):
 		return http.StatusNotFound
 	default:
 		return http.StatusInternalServerError

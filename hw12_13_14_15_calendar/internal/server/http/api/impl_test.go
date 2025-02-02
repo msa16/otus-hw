@@ -7,16 +7,17 @@ import (
 	"testing"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger"
-	memorystorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/memory"
-	middleware "github.com/oapi-codegen/nethttp-middleware"
-	"github.com/oapi-codegen/testutil"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"                          //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger"                       //nolint:depguard
+	memorystorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/memory" //nolint:depguard
+	middleware "github.com/oapi-codegen/nethttp-middleware"                                 //nolint:depguard
+	"github.com/oapi-codegen/testutil"                                                      //nolint:depguard
+	"github.com/stretchr/testify/assert"                                                    //nolint:depguard
+	"github.com/stretchr/testify/require"                                                   //nolint:depguard
 )
 
 func doGet(t *testing.T, mux *http.ServeMux, url string) *httptest.ResponseRecorder {
+	t.Helper()
 	response := testutil.NewRequest().Get(url).WithAcceptJson().GoWithHTTPHandler(t, mux)
 	return response.Recorder
 }
@@ -51,7 +52,7 @@ func TestCalendar(t *testing.T) {
 	}
 
 	testApp := &app.App{Logger: logger.New("INFO", "/tmp/calendar-test.log"), Storage: memorystorage.New()}
-	store := NewApiServer(testApp)
+	store := NewAPIServer(testApp)
 
 	HandlerWithOptions(store, opts)
 

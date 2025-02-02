@@ -70,8 +70,8 @@ type FindEventsParams struct {
 // CreateEventJSONRequestBody defines body for CreateEvent for application/json ContentType.
 type CreateEventJSONRequestBody = NewEvent
 
-// UpdateEventByIdJSONRequestBody defines body for UpdateEventById for application/json ContentType.
-type UpdateEventByIdJSONRequestBody = Event
+// UpdateEventByIDJSONRequestBody defines body for UpdateEventByID for application/json ContentType.
+type UpdateEventByIDJSONRequestBody = Event
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
@@ -81,15 +81,15 @@ type ServerInterface interface {
 	// Create new event
 	// (POST /events)
 	CreateEvent(w http.ResponseWriter, r *http.Request)
-	// Delete event by id
+	// Delete event by ID
 	// (DELETE /events/{id})
-	DeleteEventById(w http.ResponseWriter, r *http.Request, id string)
-	// Get event by id
+	DeleteEventByID(w http.ResponseWriter, r *http.Request, id string)
+	// Get event by ID
 	// (GET /events/{id})
-	FindEventById(w http.ResponseWriter, r *http.Request, id string)
-	// Update event by id
+	FindEventByID(w http.ResponseWriter, r *http.Request, id string)
+	// Update event by ID
 	// (PUT /events/{id})
-	UpdateEventById(w http.ResponseWriter, r *http.Request, id string)
+	UpdateEventByID(w http.ResponseWriter, r *http.Request, id string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -157,8 +157,8 @@ func (siw *ServerInterfaceWrapper) CreateEvent(w http.ResponseWriter, r *http.Re
 	handler.ServeHTTP(w, r)
 }
 
-// DeleteEventById operation middleware
-func (siw *ServerInterfaceWrapper) DeleteEventById(w http.ResponseWriter, r *http.Request) {
+// DeleteEventByID operation middleware
+func (siw *ServerInterfaceWrapper) DeleteEventByID(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -172,7 +172,7 @@ func (siw *ServerInterfaceWrapper) DeleteEventById(w http.ResponseWriter, r *htt
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.DeleteEventById(w, r, id)
+		siw.Handler.DeleteEventByID(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -182,8 +182,8 @@ func (siw *ServerInterfaceWrapper) DeleteEventById(w http.ResponseWriter, r *htt
 	handler.ServeHTTP(w, r)
 }
 
-// FindEventById operation middleware
-func (siw *ServerInterfaceWrapper) FindEventById(w http.ResponseWriter, r *http.Request) {
+// FindEventByID operation middleware
+func (siw *ServerInterfaceWrapper) FindEventByID(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -197,7 +197,7 @@ func (siw *ServerInterfaceWrapper) FindEventById(w http.ResponseWriter, r *http.
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.FindEventById(w, r, id)
+		siw.Handler.FindEventByID(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -207,8 +207,8 @@ func (siw *ServerInterfaceWrapper) FindEventById(w http.ResponseWriter, r *http.
 	handler.ServeHTTP(w, r)
 }
 
-// UpdateEventById operation middleware
-func (siw *ServerInterfaceWrapper) UpdateEventById(w http.ResponseWriter, r *http.Request) {
+// UpdateEventByID operation middleware
+func (siw *ServerInterfaceWrapper) UpdateEventByID(w http.ResponseWriter, r *http.Request) {
 
 	var err error
 
@@ -222,7 +222,7 @@ func (siw *ServerInterfaceWrapper) UpdateEventById(w http.ResponseWriter, r *htt
 	}
 
 	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		siw.Handler.UpdateEventById(w, r, id)
+		siw.Handler.UpdateEventByID(w, r, id)
 	}))
 
 	for _, middleware := range siw.HandlerMiddlewares {
@@ -354,9 +354,9 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 
 	m.HandleFunc("GET "+options.BaseURL+"/events", wrapper.FindEvents)
 	m.HandleFunc("POST "+options.BaseURL+"/events", wrapper.CreateEvent)
-	m.HandleFunc("DELETE "+options.BaseURL+"/events/{id}", wrapper.DeleteEventById)
-	m.HandleFunc("GET "+options.BaseURL+"/events/{id}", wrapper.FindEventById)
-	m.HandleFunc("PUT "+options.BaseURL+"/events/{id}", wrapper.UpdateEventById)
+	m.HandleFunc("DELETE "+options.BaseURL+"/events/{id}", wrapper.DeleteEventByID)
+	m.HandleFunc("GET "+options.BaseURL+"/events/{id}", wrapper.FindEventByID)
+	m.HandleFunc("PUT "+options.BaseURL+"/events/{id}", wrapper.UpdateEventByID)
 
 	return m
 }
@@ -364,19 +364,19 @@ func HandlerWithOptions(si ServerInterface, options StdHTTPServerOptions) http.H
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"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",
+	"H4sIAAAAAAAC/9RVXXPaOhD9K5q991EEQ4B7r99uAu3wknba5CmTBwUtoNaWFEkk8TD+7x1JBvNhApmm",
+	"0/TJHmnXe86e3eMlTFSulUTpLKRLsJM55iy8joxRxr9oozQaJzAcTxRH/+RoJ0ZoJ5SEFNAHk3BHwRUa",
+	"IQUhHc7QQEkhR2vZ7GDe6nqdap0RcgZlScHgw0IY5JDeQvX9VfhdSWH0iNL577Is+zSF9HYJfxucQgp/",
+	"tWtq7YpX+wqfYkZJXw4MUeMhlOsi4+F+M+LZDiUfTAQHCvjMcp15Qp3uOfb6g39a+O9/961Ol5+3WK8/",
+	"aPW6g0G/3+slSZIcpT8eBsprDntwhptAlhvlr+fCEmEJIxKfSEC4X43CF8yF5BhUnyqTMwcpaDRC8abw",
+	"r44Zdy1y3IrnzGHL+dPGFKVfl3EtXIbbbK5e4nBj0URZ1gkdWtcS0g16DTO60+pYdZPiBvZ1kbvS5wk5",
+	"Vb6ei0jhkmUoOTPk/89jYtE8ogEKj2hsHJDOWXKWeKhKo2RaQArn4YiCZm4elGwHfuF1hkFprzPzyo45",
+	"pPBBSD6KIT7LsBwdGhvmv2EcLbGeCKmaLPzFwwJNARQky2MHa6Z1J5xZIK1c4VTN/GptY4gjRKZG5WRd",
+	"h7QIZwUlT4jfKcmVdPMD0NYTWOPYLXnnQVutpI2b0E2SaFbSrfxB60xMQgfb32xckPp7wmEeEo96gheu",
+	"qs6MYQWEGWjs+QoRhIApW2TuVaBexBLcuaH2jcRnjROHnGAVQ8Eu8pyZAlL4iI6wLCPVfJUUtLINA3Zp",
+	"kDkcVVvmBwKtu1C8eDMGtRVvL58fufIn5TzJ2Q/o9i5li3JsuLe/rkyivRS8jP+hDB3uazkM54H3RTEe",
+	"nuQY8QcWttGbUr2M4fywQRxfzN6hX2aEz99T22PnYsvJfUH82NAjjnx6i0Pcr2jxGy/Ln7Uq3uF2BNOL",
+	"BsFuNGe/dSve3lJf4acHt3AR2vKutjAqtS1qWZY/AgAA//9jvCHivAwAAA==",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

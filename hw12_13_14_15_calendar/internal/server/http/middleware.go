@@ -6,8 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"
-	//nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app" //nolint:depguard
 )
 
 func loggingMiddleware(logger app.Logger, next http.Handler) http.Handler {
