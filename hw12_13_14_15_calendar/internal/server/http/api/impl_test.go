@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strconv"
 	"testing"
 	"time"
 
@@ -25,9 +26,9 @@ func doGet(t *testing.T, mux *http.ServeMux, url string) *httptest.ResponseRecor
 func TestCalendar(t *testing.T) {
 	testStartTime, _ := time.Parse(time.RFC3339, "2025-01-02T15:00:00Z")
 	testStopTime, _ := time.Parse(time.RFC3339, "2025-01-02T16:00:00Z")
-	testReminder := "1h"
+	testReminder := "1h0m0s"
 	testDescription := "test description"
-	var testEventID string
+	allEvents := make(map[string]int64)
 
 	var err error
 
@@ -56,47 +57,81 @@ func TestCalendar(t *testing.T) {
 
 	HandlerWithOptions(store, opts)
 
-	t.Run("Create event", func(t *testing.T) {
-		newEvent := NewEvent{
-			Title:       "new event",
-			Description: &testDescription,
-			StartTime:   testStartTime,
-			StopTime:    testStopTime,
-			UserID:      1,
-			Reminder:    &testReminder,
+	t.Run("Create events", func(t *testing.T) {
+		for i := 0; i < 10; i++ {
+			newEvent := NewEvent{
+				Title:       "new event " + strconv.Itoa(i),
+				Description: &testDescription,
+				StartTime:   testStartTime,
+				StopTime:    testStopTime,
+				UserID:      int64(i),
+				Reminder:    &testReminder,
+			}
+
+			rr := testutil.NewRequest().Post("/events").WithJsonBody(newEvent).GoWithHTTPHandler(t, m).Recorder
+			assert.Equal(t, http.StatusCreated, rr.Code)
+
+			var resultEventID EventID
+			err = json.NewDecoder(rr.Body).Decode(&resultEventID)
+			assert.NoError(t, err, "error unmarshaling response")
+			assert.Equal(t, 36, len(resultEventID.ID), "event id should be 36 chars long")
+			allEvents[resultEventID.ID] = int64(i)
 		}
-
-		rr := testutil.NewRequest().Post("/events").WithJsonBody(newEvent).GoWithHTTPHandler(t, m).Recorder
-		assert.Equal(t, http.StatusCreated, rr.Code)
-
-		var resultEventID EventID
-		err = json.NewDecoder(rr.Body).Decode(&resultEventID)
-		assert.NoError(t, err, "error unmarshaling response")
-		assert.Equal(t, 36, len(resultEventID.ID), "event id should be 36 chars long")
-		testEventID = resultEventID.ID
 	})
 
 	t.Run("Get event", func(t *testing.T) {
-		rr := doGet(t, m, "/events/"+testEventID)
-		assert.Equal(t, http.StatusOK, rr.Code)
+		for eventID, userID := range allEvents {
+			rr := doGet(t, m, "/events/"+eventID)
+			assert.Equal(t, http.StatusOK, rr.Code)
 
-		var resultEvent Event
-		err = json.NewDecoder(rr.Body).Decode(&resultEvent)
-		assert.NoError(t, err, "error unmarshaling response")
+			var resultEvent Event
+			err = json.NewDecoder(rr.Body).Decode(&resultEvent)
+			assert.NoError(t, err, "error unmarshaling response")
+			assert.Equal(t, eventID, resultEvent.ID, "event id should match")
+			assert.Equal(t, "new event "+strconv.Itoa(int(userID)), resultEvent.Title, "event title should match")
+			assert.Equal(t, testDescription, *resultEvent.Description, "event description should match")
+			assert.Equal(t, testStartTime, resultEvent.StartTime, "event start time should match")
+			assert.Equal(t, testStopTime, resultEvent.StopTime, "event stop time should match")
+			assert.Equal(t, userID, resultEvent.UserID, "event user id should match")
+			assert.Equal(t, testReminder, *resultEvent.Reminder, "event reminder should match")
+		}
 	})
 
 	t.Run("Update event", func(t *testing.T) {
-		newEvent := Event{
-			Title:       "event title",
-			Description: &testDescription,
-			StartTime:   testStartTime,
-			StopTime:    testStopTime,
-			UserID:      1,
-			Reminder:    &testReminder,
-			ID:          testEventID,
-		}
+		for eventID, userID := range allEvents {
+			newEvent := Event{
+				Title:       "event title updated",
+				Description: &testDescription,
+				StartTime:   testStartTime,
+				StopTime:    testStopTime,
+				UserID:      userID,
+				Reminder:    &testReminder,
+				ID:          eventID,
+			}
 
-		rr := testutil.NewRequest().Put("/events/"+testEventID).WithJsonBody(newEvent).GoWithHTTPHandler(t, m).Recorder
-		assert.Equal(t, http.StatusNoContent, rr.Code)
+			rr := testutil.NewRequest().Put("/events/"+eventID).WithJsonBody(newEvent).GoWithHTTPHandler(t, m).Recorder
+			assert.Equal(t, http.StatusNoContent, rr.Code)
+		}
+	})
+
+	t.Run("Find events", func(t *testing.T) {
+		rr := doGet(t, m, "/events?period=day&startTime="+testStartTime.Format(time.RFC3339))
+		assert.Equal(t, http.StatusOK, rr.Code)
+
+		var resultEvents []Event
+		err = json.NewDecoder(rr.Body).Decode(&resultEvents)
+		assert.NoError(t, err, "error unmarshaling response")
+		assert.Equal(t, len(allEvents), len(resultEvents), "event count should be the same as the number of events created")
+
+		for _, event := range resultEvents {
+			assert.Equal(t, event.UserID, allEvents[event.ID], "event user id should match")
+		}
+	})
+
+	t.Run("Delete event", func(t *testing.T) {
+		for eventID := range allEvents {
+			rr := testutil.NewRequest().Delete("/events/"+eventID).GoWithHTTPHandler(t, m).Recorder
+			assert.Equal(t, http.StatusNoContent, rr.Code)
+		}
 	})
 }
