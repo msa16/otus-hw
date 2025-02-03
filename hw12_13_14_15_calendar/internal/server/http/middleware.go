@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger" //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app" //nolint:depguard
 )
 
-func loggingMiddleware(logger *logger.Logger, next http.Handler) http.Handler {
+func loggingMiddleware(logger app.Logger, next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		wrw := &WrapResponseWriter{ResponseWriter: w}
 		sb := strings.Builder{}

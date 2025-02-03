@@ -8,8 +8,8 @@ import (
 )
 
 type App struct {
-	logger  Logger
-	storage Storage
+	Logger  Logger
+	Storage Storage
 }
 
 type Logger interface {
@@ -30,13 +30,5 @@ type Storage interface {
 }
 
 func New(logger Logger, storage Storage) *App {
-	return &App{logger: logger, storage: storage}
+	return &App{Logger: logger, Storage: storage}
 }
-
-func (a *App) CreateEvent(_ context.Context, _, _ string) error {
-	// TODO
-	return nil
-	// return a.storage.CreateEvent(storage.Event{ID: id, Title: title})
-}
-
-// TODO

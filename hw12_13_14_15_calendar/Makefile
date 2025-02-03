@@ -38,6 +38,9 @@ run-img: build-img
 version: build
 	$(BIN) version
 
+generate:
+	go generate ./...
+	
 test:
 	go test -race ./internal/...
 
