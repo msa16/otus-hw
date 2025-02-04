@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require" //nolint:depguard
 )
 
 const (
@@ -150,6 +150,76 @@ func TestAllStageStop(t *testing.T) {
 		wg.Wait()
 
 		require.Len(t, result, 0)
+	})
+}
 
+func TestEmpty(t *testing.T) {
+	wg := sync.WaitGroup{}
+	// Stage generator
+	g := func(_ string, f func(v interface{}) interface{}) Stage {
+		return func(in In) Out {
+			out := make(Bi)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				defer close(out)
+				for v := range in {
+					time.Sleep(sleepPerStage)
+					out <- f(v)
+				}
+			}()
+			return out
+		}
+	}
+
+	stages := []Stage{
+		g("Dummy", func(v interface{}) interface{} { return v }),
+		g("Multiplier (* 2)", func(v interface{}) interface{} { return v.(int) * 2 }),
+		g("Adder (+ 100)", func(v interface{}) interface{} { return v.(int) + 100 }),
+		g("Stringifier", func(v interface{}) interface{} { return strconv.Itoa(v.(int)) }),
+	}
+
+	stagesEmpty := []Stage{}
+
+	t.Run("empty stages", func(t *testing.T) {
+		in := make(Bi)
+		done := make(Bi)
+		data := []int{1, 2, 3, 4, 5}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]int, 0, 10)
+		for i := range ExecutePipeline(in, done, stagesEmpty...) {
+			result = append(result, i.(int))
+		}
+		wg.Wait()
+
+		require.Equal(t, []int{1, 2, 3, 4, 5}, result)
+	})
+
+	t.Run("empty data", func(t *testing.T) {
+		in := make(Bi)
+		done := make(Bi)
+		data := []int{}
+
+		go func() {
+			for _, v := range data {
+				in <- v
+			}
+			close(in)
+		}()
+
+		result := make([]string, 0, 10)
+		for s := range ExecutePipeline(in, done, stages...) {
+			result = append(result, s.(string))
+		}
+		wg.Wait()
+
+		require.Len(t, result, 0)
 	})
 }
