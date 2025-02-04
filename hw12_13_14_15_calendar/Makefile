@@ -5,10 +5,11 @@ GOOSE_DBSTRING=postgres://calendar:calendar@localhost:15432/calendar
 GOOSE_MIGRATION_DIR=./migrations
 
 BIN := "./bin/calendar"
+BIN_SCHEDULER := "./bin/calendar_scheduler"
 DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
-LDFLAGS := -X main.release="develop" -X main.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X main.gitHash=$(GIT_HASH)
+LDFLAGS := -X github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/config.release="develop" -X github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/config.buildDate=$(shell date -u +%Y-%m-%dT%H:%M:%S) -X github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/config.gitHash=$(GIT_HASH)
 
 migrate-prepare:
 	go install github.com/pressly/goose/v3/cmd/goose@latest
@@ -22,9 +23,13 @@ migrate: migrate-prepare migrate-up
 
 build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
+	go build -v -o $(BIN_SCHEDULER) -ldflags "$(LDFLAGS)" ./cmd/calendar_scheduler
 
 run: build
 	$(BIN) -config ./configs/calendar_config.yml
+
+run_scheduler: build
+	$(BIN_SCHEDULER) -config ./configs/scheduler_config.yml
 
 build-img:
 	docker build \

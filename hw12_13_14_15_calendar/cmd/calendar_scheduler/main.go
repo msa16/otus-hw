@@ -5,13 +5,13 @@ import (
 	"flag"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"                          //nolint:depguard
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/config"                       //nolint:depguard
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger"                       //nolint:depguard
-	internalhttp "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/server/http"     //nolint:depguard
 	memorystorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/memory" //nolint:depguard
 	sqlstorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/sql"       //nolint:depguard
 )
@@ -23,6 +23,7 @@ func init() {
 }
 
 func main() {
+	// docker run -p 9092:9092 apache/kafka-native:3.9.0
 	flag.Parse()
 
 	if flag.Arg(0) == "version" {
@@ -48,9 +49,7 @@ func main() {
 		logg.Info("create memory storage")
 		storage = memorystorage.New()
 	}
-	calendar := app.New(logg, storage)
-
-	server := internalhttp.NewServer(calendar, config.Server.HTTP.Host, config.Server.HTTP.Port)
+	app.New(logg, storage)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
@@ -62,10 +61,6 @@ func main() {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 		defer cancel()
 
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
-		}
-
 		dbStorage, ok := storage.(*sqlstorage.Storage)
 		if ok {
 			if err := dbStorage.Close(ctx); err != nil {
@@ -74,11 +69,9 @@ func main() {
 		}
 	}()
 
-	logg.Info("calendar is running...")
+	logg.Info("calendar scheduler is running...")
+	logg.Info(config.Kafka.Host + ":" + strconv.Itoa(config.Kafka.Port))
+	logg.Info(config.Kafka.Topic)
 
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
-		cancel()
-		os.Exit(1)
-	}
+	<-ctx.Done()
 }

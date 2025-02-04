@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"log"
@@ -13,6 +13,7 @@ import (
 type Config struct {
 	Logger  LoggerConf `yaml:"log"`
 	Server  ServerConf `yaml:"server"`
+	Kafka   KafkaConf  `yaml:"kafka"`
 	Storage string
 	DB      StorageConf
 }
@@ -24,6 +25,12 @@ type LoggerConf struct {
 
 type ServerConf struct {
 	HTTP AddrConf `yaml:"http"`
+}
+
+type KafkaConf struct {
+	Host  string
+	Port  int
+	Topic string
 }
 
 type AddrConf struct {
