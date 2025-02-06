@@ -18,8 +18,8 @@ type Client struct {
 	subscriber message.Subscriber
 }
 
-func New(brokers []string) Client {
-	return Client{brokers: brokers, marshaler: kafka.DefaultMarshaler{}, logger: watermill.NewStdLogger(true, false)}
+func New(brokers []string) *Client {
+	return &Client{brokers: brokers, marshaler: kafka.DefaultMarshaler{}, logger: watermill.NewStdLogger(true, false)}
 }
 
 func (c *Client) Connect(ctx context.Context) error {

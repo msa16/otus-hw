@@ -48,7 +48,7 @@ func main() {
 		logg.Info("create memory storage")
 		storage = memorystorage.New()
 	}
-	calendar := app.New(logg, storage)
+	calendar := app.New(logg, storage, nil)
 
 	server := internalhttp.NewServer(calendar, config.Server.HTTP.Host, config.Server.HTTP.Port)
 

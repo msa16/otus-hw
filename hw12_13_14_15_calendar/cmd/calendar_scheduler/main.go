@@ -51,14 +51,15 @@ func main() {
 		logg.Info("create memory storage")
 		storage = memorystorage.New()
 	}
-	app.New(logg, storage)
 
 	kafka := kafka.New([]string{net.JoinHostPort(config.Kafka.Host, strconv.Itoa(config.Kafka.Port))})
+	calendar := app.New(logg, storage, kafka)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
+	go worker(ctx, calendar)
 	go func() {
 		<-ctx.Done()
 
@@ -74,8 +75,7 @@ func main() {
 	}()
 
 	logg.Info("calendar scheduler is starting...")
-	logg.Info(config.Kafka.Host + ":" + strconv.Itoa(config.Kafka.Port))
-	logg.Info(config.Kafka.Topic)
+	logg.Info(config.Kafka.Host + ":" + strconv.Itoa(config.Kafka.Port) + "/" + config.Kafka.Topic)
 
 	if err := kafka.Connect(ctx); err != nil {
 		logg.Error("failed to connect to kafka: " + err.Error())
