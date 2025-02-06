@@ -4,11 +4,11 @@ import (
 	"context"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app" //nolint:depguard
 )
 
 func worker(ctx context.Context, app *app.App) {
-	ticker := time.NewTicker(time.Duration(time.Second * 5))
+	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
 	for {
 		select {
