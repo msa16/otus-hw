@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"flag"
+	"net"
 	"os"
 	"os/signal"
 	"strconv"
@@ -10,6 +11,7 @@ import (
 	"time"
 
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"                          //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/client/kafka"                 //nolint:depguard
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/config"                       //nolint:depguard
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger"                       //nolint:depguard
 	memorystorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/memory" //nolint:depguard
@@ -51,6 +53,8 @@ func main() {
 	}
 	app.New(logg, storage)
 
+	kafka := kafka.New([]string{net.JoinHostPort(config.Kafka.Host, strconv.Itoa(config.Kafka.Port))})
+
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
@@ -69,9 +73,12 @@ func main() {
 		}
 	}()
 
-	logg.Info("calendar scheduler is running...")
+	logg.Info("calendar scheduler is starting...")
 	logg.Info(config.Kafka.Host + ":" + strconv.Itoa(config.Kafka.Port))
 	logg.Info(config.Kafka.Topic)
 
-	<-ctx.Done()
+	if err := kafka.Connect(ctx); err != nil {
+		logg.Error("failed to connect to kafka: " + err.Error())
+		return
+	}
 }
