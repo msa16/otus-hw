@@ -138,12 +138,11 @@ func (s *Server) UpdateEventByID(w http.ResponseWriter, r *http.Request, id stri
 	}
 
 	stEvent := storage.Event{
-		ID:          event.ID,
-		Title:       event.Title,
-		Description: *event.Description,
-		StartTime:   event.StartTime,
-		StopTime:    event.StopTime,
-		UserID:      event.UserID,
+		ID:        event.ID,
+		Title:     event.Title,
+		StartTime: event.StartTime,
+		StopTime:  event.StopTime,
+		UserID:    event.UserID,
 	}
 
 	if event.Reminder != nil {
@@ -153,6 +152,9 @@ func (s *Server) UpdateEventByID(w http.ResponseWriter, r *http.Request, id stri
 			return
 		}
 		stEvent.Reminder = &reminder
+	}
+	if event.Description != nil {
+		stEvent.Description = *event.Description
 	}
 
 	err := s.app.Storage.UpdateEvent(r.Context(), id, stEvent)

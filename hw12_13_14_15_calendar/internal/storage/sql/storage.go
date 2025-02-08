@@ -43,7 +43,7 @@ func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) (string,
 
 	var reminderTime *time.Time
 	if event.Reminder != nil {
-		tempTime := event.StartTime.Add(*event.Reminder)
+		tempTime := event.StartTime.Add(-*event.Reminder)
 		reminderTime = &tempTime
 	}
 	row := s.db.QueryRowContext(ctx, `insert into event (id, title, startTime, stopTime, description, userID, reminder, reminderTime) 
@@ -67,9 +67,16 @@ func (s *Storage) UpdateEvent(ctx context.Context, id string, event storage.Even
 	if event.ID != id {
 		return fmt.Errorf("%w: id=%v event.ID=%v", storage.ErrInvalidArgiments, id, event.ID)
 	}
+	var reminderTime *time.Time
+	if event.Reminder != nil {
+		tempTime := event.StartTime.Add(-*event.Reminder)
+		reminderTime = &tempTime
+	}
 	result, err := s.db.ExecContext(ctx, `update event 
-	SET title = $1, startTime = $2, stopTime = $3, description = $4, reminder = $5 WHERE id = $6 and userID = $7`,
-		event.Title, event.StartTime, event.StopTime, event.Description, event.Reminder, event.ID, event.UserID)
+	SET title = $1, startTime = $2, stopTime = $3, description = $4, reminder = $5, reminderTime = $6 
+	WHERE id = $7 and userID = $8`,
+		event.Title, event.StartTime, event.StopTime, event.Description, event.Reminder, reminderTime,
+		event.ID, event.UserID)
 	if err != nil {
 		return fmt.Errorf("%w: %v %v", storage.ErrUpdateEvent, event, err) //nolint:errorlint
 	}
