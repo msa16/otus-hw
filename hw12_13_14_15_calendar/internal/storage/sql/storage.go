@@ -41,11 +41,16 @@ func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) (string,
 		return "", storage.ErrInvalidStopTime
 	}
 
-	row := s.db.QueryRowContext(ctx, `insert into event (id, title, startTime, stopTime, description, userID, reminder) 
-	values (gen_random_uuid(),$1, $2, $3, $4, $5, $6) 
+	var reminderTime *time.Time
+	if event.Reminder != nil {
+		tempTime := event.StartTime.Add(*event.Reminder)
+		reminderTime = &tempTime
+	}
+	row := s.db.QueryRowContext(ctx, `insert into event (id, title, startTime, stopTime, description, userID, reminder, reminderTime) 
+	values (gen_random_uuid(),$1, $2, $3, $4, $5, $6, $7) 
 	on conflict (starttime, userid) do nothing
 	returning id`,
-		event.Title, event.StartTime, event.StopTime, event.Description, event.UserID, event.Reminder)
+		event.Title, event.StartTime, event.StopTime, event.Description, event.UserID, event.Reminder, reminderTime)
 
 	var id string
 	err := row.Scan(&id)
