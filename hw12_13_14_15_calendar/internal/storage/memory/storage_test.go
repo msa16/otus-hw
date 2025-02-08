@@ -165,6 +165,24 @@ func TestStorage(t *testing.T) {
 	})
 }
 
+func TestStorageDeleteEventsBeforeDate(t *testing.T) {
+	repo := New()
+	ctx := context.Background()
+	_, err := repo.CreateEvent(ctx, storage.Event{
+		UserID: 1, StartTime: time.Now().Add(-time.Hour), StopTime: time.Now(),
+	})
+	require.NoError(t, err)
+	_, err = repo.CreateEvent(ctx, storage.Event{
+		UserID: 2, StartTime: time.Now().Add(time.Hour), StopTime: time.Now().Add(time.Hour * 2),
+	})
+	require.NoError(t, err)
+
+	err = repo.DeleteEventsBeforeDate(ctx, time.Now())
+	require.NoError(t, err)
+	require.Equal(t, len(repo.all), 1)
+	require.Equal(t, 1, len(repo.byUser[2]))
+}
+
 func TestStorageConcurrency(t *testing.T) {
 	const threadCount = 10
 	const objectPerThread = 10000

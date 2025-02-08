@@ -31,6 +31,7 @@ type Storage interface {
 	ListEventsMonth(ctx context.Context, startTime time.Time) ([]*storage.Event, error)
 	ListEventsReminder(ctx context.Context) ([]*storage.Event, error)
 	ClearReminderTime(ctx context.Context, id string) error
+	DeleteEventsBeforeDate(ctx context.Context, time time.Time) error
 }
 
 func New(logger Logger, storage Storage, broker client.Broker) *App {

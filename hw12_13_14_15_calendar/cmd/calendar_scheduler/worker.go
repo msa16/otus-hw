@@ -12,14 +12,19 @@ import (
 func worker(ctx context.Context, app *app.App, topic string) {
 	ticker := time.NewTicker(time.Second * 5)
 	defer ticker.Stop()
+	tickerClearOldEvents := time.NewTicker(time.Minute * 10)
+	defer tickerClearOldEvents.Stop()
 	for {
 		select {
 		case <-ctx.Done():
 			app.Logger.Info("worker closing")
 			ticker.Stop()
+			tickerClearOldEvents.Stop()
 			return
 		case <-ticker.C:
 			processEvents(ctx, app, topic)
+		case <-tickerClearOldEvents.C:
+			clearOldEvents(ctx, app)
 		}
 	}
 }
@@ -55,5 +60,14 @@ func processEvents(ctx context.Context, app *app.App, topic string) {
 			continue
 		}
 		app.Logger.Info("published " + event.Title)
+	}
+}
+
+func clearOldEvents(ctx context.Context, app *app.App) {
+	// ТЗ: процесс должен очищать старые (произошедшие более 1 года назад) события.
+	app.Logger.Debug("clear old events")
+	err := app.Storage.DeleteEventsBeforeDate(ctx, time.Now().Add(-time.Hour*24*365))
+	if err != nil {
+		app.Logger.Error("failed to clear old events" + err.Error())
 	}
 }

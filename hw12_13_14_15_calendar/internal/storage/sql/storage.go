@@ -198,3 +198,11 @@ func (s *Storage) ClearReminderTime(ctx context.Context, id string) error {
 	}
 	return nil
 }
+
+func (s *Storage) DeleteEventsBeforeDate(_ context.Context, time time.Time) error {
+	_, err := s.db.ExecContext(context.Background(), `delete from event where starttime < $1;`, time)
+	if err != nil {
+		return fmt.Errorf("%w: %v %v", storage.ErrDeleteEvent, time, err) //nolint:errorlint
+	}
+	return nil
+}

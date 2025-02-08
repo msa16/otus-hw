@@ -145,3 +145,15 @@ func (s *Storage) ClearReminderTime(_ context.Context, _ string) error {
 	// поле reminderTime есть только в БД, здесь ничего делать не надо
 	return nil
 }
+
+func (s *Storage) DeleteEventsBeforeDate(_ context.Context, time time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, v := range s.all {
+		if v.StartTime.Before(time) {
+			delete(s.byUser[v.UserID], v.StartTime)
+			delete(s.all, v.ID)
+		}
+	}
+	return nil
+}
