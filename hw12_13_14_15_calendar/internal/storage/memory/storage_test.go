@@ -145,6 +145,10 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, 0, len(events))
 	})
+	t.Run("clear reminder", func(t *testing.T) {
+		err := repo.ClearReminderTime(ctx, event1.ID)
+		require.NoError(t, err)
+	})
 
 	t.Run("delete event ErrEventNotFound", func(t *testing.T) {
 		err := repo.DeleteEvent(ctx, badEventID)

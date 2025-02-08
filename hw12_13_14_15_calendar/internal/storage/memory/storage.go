@@ -129,7 +129,7 @@ func (s *Storage) GetEvent(_ context.Context, id string) (*storage.Event, error)
 	return current, nil
 }
 
-func (s *Storage) ListEventsReminder(ctx context.Context) ([]*storage.Event, error) {
+func (s *Storage) ListEventsReminder(_ context.Context) ([]*storage.Event, error) {
 	result := make([]*storage.Event, 0)
 	s.mu.RLock()
 	defer s.mu.RUnlock()
@@ -139,4 +139,9 @@ func (s *Storage) ListEventsReminder(ctx context.Context) ([]*storage.Event, err
 		}
 	}
 	return result, nil
+}
+
+func (s *Storage) ClearReminderTime(_ context.Context, _ string) error {
+	// поле reminderTime есть только в БД, здесь ничего делать не надо
+	return nil
 }

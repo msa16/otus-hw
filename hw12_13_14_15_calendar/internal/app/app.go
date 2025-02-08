@@ -30,6 +30,7 @@ type Storage interface {
 	ListEventsWeek(ctx context.Context, startTime time.Time) ([]*storage.Event, error)
 	ListEventsMonth(ctx context.Context, startTime time.Time) ([]*storage.Event, error)
 	ListEventsReminder(ctx context.Context) ([]*storage.Event, error)
+	ClearReminderTime(ctx context.Context, id string) error
 }
 
 func New(logger Logger, storage Storage, broker client.Broker) *App {

@@ -9,7 +9,7 @@ import (
 	"github.com/ThreeDotsLabs/watermill/message"                   //nolint:depguard
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware" //nolint:depguard
 	"github.com/ThreeDotsLabs/watermill/message/router/plugin"     //nolint:depguard
-	"github.com/google/uuid"
+	"github.com/google/uuid"                                       //nolint:depguard
 )
 
 type Client struct {
@@ -20,9 +20,7 @@ type Client struct {
 	subscriber message.Subscriber
 }
 
-var (
-	ErrPublisherNotReady = errors.New("publisher is not ready")
-)
+var ErrPublisherNotReady = errors.New("publisher is not ready")
 
 func New(brokers []string) *Client {
 	return &Client{brokers: brokers, marshaler: kafka.DefaultMarshaler{}, logger: watermill.NewStdLogger(true, false)}

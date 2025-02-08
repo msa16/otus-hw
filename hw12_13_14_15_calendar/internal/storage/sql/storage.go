@@ -46,8 +46,8 @@ func (s *Storage) CreateEvent(ctx context.Context, event storage.Event) (string,
 		tempTime := event.StartTime.Add(-*event.Reminder)
 		reminderTime = &tempTime
 	}
-	row := s.db.QueryRowContext(ctx, `insert into event (id, title, startTime, stopTime, description, userID, reminder, reminderTime) 
-	values (gen_random_uuid(),$1, $2, $3, $4, $5, $6, $7) 
+	row := s.db.QueryRowContext(ctx, `insert into event (id, title, startTime, stopTime, description, userID, reminder, 
+	reminderTime) values (gen_random_uuid(),$1, $2, $3, $4, $5, $6, $7) 
 	on conflict (starttime, userid) do nothing
 	returning id`,
 		event.Title, event.StartTime, event.StopTime, event.Description, event.UserID, event.Reminder, reminderTime)
@@ -181,4 +181,20 @@ func makeEventsFromRows(rows *sql.Rows) ([]*storage.Event, error) {
 		return nil, fmt.Errorf("%w: %v", storage.ErrReadEvent, rows.Err()) //nolint:errorlint
 	}
 	return result, nil
+}
+
+func (s *Storage) ClearReminderTime(ctx context.Context, id string) error {
+	result, err := s.db.ExecContext(ctx, `update event set reminderTime = null where id=$1;`, id)
+	if err != nil {
+		return fmt.Errorf("%w: %v %v", storage.ErrUpdateEvent, id, err) //nolint:errorlint
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("%w: %v %v", storage.ErrUpdateEvent, id, err) //nolint:errorlint
+	}
+	if rows != 1 {
+		return storage.ErrEventNotFound
+	}
+	return nil
 }
