@@ -128,3 +128,15 @@ func (s *Storage) GetEvent(_ context.Context, id string) (*storage.Event, error)
 	}
 	return current, nil
 }
+
+func (s *Storage) ListEventsReminder(ctx context.Context) ([]*storage.Event, error) {
+	result := make([]*storage.Event, 0)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, v := range s.all {
+		if v.Reminder != nil && v.StartTime.Before(time.Now().Add(-*v.Reminder)) {
+			result = append(result, v)
+		}
+	}
+	return result, nil
+}

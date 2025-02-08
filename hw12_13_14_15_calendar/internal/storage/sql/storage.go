@@ -143,7 +143,20 @@ func (s *Storage) listEventsInt(ctx context.Context, startTime time.Time, stopTi
 		return nil, fmt.Errorf("%w: %v", storage.ErrReadEvent, err) //nolint:errorlint
 	}
 	defer rows.Close()
+	return makeEventsFromRows(rows)
+}
 
+func (s *Storage) ListEventsReminder(ctx context.Context) ([]*storage.Event, error) {
+	rows, err := s.db.QueryContext(ctx, `select id, title, starttime, stoptime, description, userid, reminder 
+	from event where ReminderTime < CURRENT_TIMESTAMP`)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return nil, fmt.Errorf("%w: %v", storage.ErrReadEvent, err) //nolint:errorlint
+	}
+	defer rows.Close()
+	return makeEventsFromRows(rows)
+}
+
+func makeEventsFromRows(rows *sql.Rows) ([]*storage.Event, error) {
 	result := make([]*storage.Event, 0)
 	for rows.Next() {
 		event := &storage.Event{}
@@ -156,7 +169,7 @@ func (s *Storage) listEventsInt(ctx context.Context, startTime time.Time, stopTi
 	}
 
 	if rows.Err() != nil {
-		return nil, fmt.Errorf("%w: %v", storage.ErrReadEvent, err) //nolint:errorlint
+		return nil, fmt.Errorf("%w: %v", storage.ErrReadEvent, rows.Err()) //nolint:errorlint
 	}
 	return result, nil
 }
