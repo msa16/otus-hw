@@ -160,10 +160,19 @@ func makeEventsFromRows(rows *sql.Rows) ([]*storage.Event, error) {
 	result := make([]*storage.Event, 0)
 	for rows.Next() {
 		event := &storage.Event{}
+		var reminderStr string
 		err := rows.Scan(&event.ID, &event.Title, &event.StartTime, &event.StopTime, &event.Description, &event.UserID,
-			&event.Reminder)
+			&reminderStr)
 		if err != nil {
 			return nil, fmt.Errorf("%w: %v", storage.ErrReadEvent, err) //nolint:errorlint
+		}
+		if reminderStr != "" {
+			reminderTime, err := time.Parse(time.TimeOnly, reminderStr)
+			if err != nil {
+				return nil, fmt.Errorf("%w: %v", storage.ErrReadEvent, err) //nolint:errorlint
+			}
+			reminder := time.Duration(reminderTime.Hour()*60*60+reminderTime.Minute()*60+reminderTime.Second()) * 1000000000
+			event.Reminder = &reminder
 		}
 		result = append(result, event)
 	}

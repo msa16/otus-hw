@@ -2,12 +2,14 @@ package kafka
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ThreeDotsLabs/watermill"                           //nolint:depguard
 	"github.com/ThreeDotsLabs/watermill-kafka/v3/pkg/kafka"        //nolint:depguard
 	"github.com/ThreeDotsLabs/watermill/message"                   //nolint:depguard
 	"github.com/ThreeDotsLabs/watermill/message/router/middleware" //nolint:depguard
 	"github.com/ThreeDotsLabs/watermill/message/router/plugin"     //nolint:depguard
+	"github.com/google/uuid"
 )
 
 type Client struct {
@@ -18,6 +20,10 @@ type Client struct {
 	subscriber message.Subscriber
 }
 
+var (
+	ErrPublisherNotReady = errors.New("publisher is not ready")
+)
+
 func New(brokers []string) *Client {
 	return &Client{brokers: brokers, marshaler: kafka.DefaultMarshaler{}, logger: watermill.NewStdLogger(true, false)}
 }
@@ -25,6 +31,12 @@ func New(brokers []string) *Client {
 func (c *Client) Connect(ctx context.Context) error {
 	for {
 		// ТЗ: при запуске процесс подключается к Kafka, если Kafka недоступна - ждёт
+		// но надо останавливаться по Ctrl+C
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
 		var err error
 		c.publisher, err = c.createPublisher()
 		if err != nil {
@@ -63,8 +75,14 @@ func (c *Client) Disconnect() error {
 	return nil
 }
 
-func (c *Client) Publish(_ string, _ []byte) error {
-	return nil
+func (c *Client) Publish(topic string, payload []byte) error {
+	if c.publisher == nil {
+		return ErrPublisherNotReady
+	}
+	return c.publisher.Publish(topic, message.NewMessage(
+		uuid.New().String(),
+		payload,
+	))
 }
 
 func (c *Client) Subscribe(_ string) (<-chan []byte, error) {

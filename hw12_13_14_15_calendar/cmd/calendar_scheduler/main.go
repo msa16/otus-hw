@@ -59,7 +59,7 @@ func main() {
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	go worker(ctx, calendar)
+	go worker(ctx, calendar, config.Kafka.Topic)
 	go func() {
 		<-ctx.Done()
 
