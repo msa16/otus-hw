@@ -24,7 +24,7 @@ func New(brokers []string) *Client {
 
 func (c *Client) Connect(ctx context.Context) error {
 	for {
-		// пробуем подключаться пока не получиться
+		// ТЗ: при запуске процесс подключается к Kafka, если Kafka недоступна - ждёт
 		var err error
 		c.publisher, err = c.createPublisher()
 		if err != nil {

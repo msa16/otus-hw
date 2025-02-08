@@ -11,7 +11,7 @@ type Event struct {
 	StopTime    time.Time
 	Description string
 	UserID      int64
-	Reminder    time.Duration
+	Reminder    *time.Duration
 }
 
 // Уведомление - временная сущность, в БД не хранится, складывается в очередь для хранителя.

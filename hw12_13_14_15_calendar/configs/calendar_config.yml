@@ -5,7 +5,7 @@ server:
   http:
     port: 8080
     host: 0.0.0.0
-storage: memory
+storage: sql
 db:
   driver: pgx
   dsn: postgres://calendar:calendar@localhost:15432/calendar
