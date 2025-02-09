@@ -58,6 +58,7 @@ func main() {
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
+	workerCtx = ctx
 
 	go func() {
 		<-ctx.Done()

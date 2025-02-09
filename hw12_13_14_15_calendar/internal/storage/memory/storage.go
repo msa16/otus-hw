@@ -157,3 +157,8 @@ func (s *Storage) DeleteEventsBeforeDate(_ context.Context, time time.Time) erro
 	}
 	return nil
 }
+
+func (s *Storage) SaveNotification(_ context.Context, _ storage.Notification) error {
+	// реализация только в БД
+	return nil
+}

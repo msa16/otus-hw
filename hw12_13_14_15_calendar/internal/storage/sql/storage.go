@@ -199,10 +199,21 @@ func (s *Storage) ClearReminderTime(ctx context.Context, id string) error {
 	return nil
 }
 
-func (s *Storage) DeleteEventsBeforeDate(_ context.Context, time time.Time) error {
-	_, err := s.db.ExecContext(context.Background(), `delete from event where starttime < $1;`, time)
+func (s *Storage) DeleteEventsBeforeDate(ctx context.Context, time time.Time) error {
+	_, err := s.db.ExecContext(ctx, `delete from event where starttime < $1;`, time)
 	if err != nil {
 		return fmt.Errorf("%w: %v %v", storage.ErrDeleteEvent, time, err) //nolint:errorlint
+	}
+	return nil
+}
+
+func (s *Storage) SaveNotification(ctx context.Context, notification storage.Notification) error {
+	_, err := s.db.ExecContext(
+		ctx, `insert into notification (id, title, startTime, userID) values ($1, $2, $3, $4) on conflict (id) do nothing`,
+		notification.ID, notification.Title, notification.StartTime, notification.UserID,
+	)
+	if err != nil {
+		return fmt.Errorf("%w: %v %v", storage.ErrCreateNotification, notification, err) //nolint:errorlint
 	}
 	return nil
 }
