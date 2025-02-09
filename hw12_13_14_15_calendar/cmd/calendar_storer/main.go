@@ -21,7 +21,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "configs/scheduler_config.yml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "configs/storer_config.yml", "Path to configuration file")
 }
 
 func main() {
@@ -52,13 +52,13 @@ func main() {
 	}
 
 	kafka := kafka.New([]string{net.JoinHostPort(config.Kafka.Host, strconv.Itoa(config.Kafka.Port))}, logg)
-	calendar := app.New(logg, storage, kafka)
+	kafka.Subscribe(config.Kafka.Topic, processNotification)
+	calendar = app.New(logg, storage, kafka)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
 
-	go worker(ctx, calendar, config.Kafka.Topic)
 	go func() {
 		<-ctx.Done()
 
@@ -73,7 +73,7 @@ func main() {
 		}
 	}()
 
-	logg.Info("calendar scheduler is starting...")
+	logg.Info("calendar storer is starting...")
 	logg.Info(config.Kafka.Host + ":" + strconv.Itoa(config.Kafka.Port) + "/" + config.Kafka.Topic)
 
 	if err := kafka.Connect(ctx); err != nil {

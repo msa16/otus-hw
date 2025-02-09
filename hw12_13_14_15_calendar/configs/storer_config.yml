@@ -1,0 +1,11 @@
+log:
+  level: INFO
+  file: /tmp/calendar_storer.log
+kafka:
+  port: 9092
+  host: localhost
+  topic: events
+storage: sql
+db:
+  driver: pgx
+  dsn: postgres://calendar:calendar@localhost:15432/calendar

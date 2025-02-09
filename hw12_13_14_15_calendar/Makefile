@@ -6,6 +6,7 @@ GOOSE_MIGRATION_DIR=./migrations
 
 BIN := "./bin/calendar"
 BIN_SCHEDULER := "./bin/calendar_scheduler"
+BIN_STORER := "./bin/calendar_storer"
 DOCKER_IMG="calendar:develop"
 
 GIT_HASH := $(shell git log --format="%h" -n 1)
@@ -24,12 +25,16 @@ migrate: migrate-prepare migrate-up
 build:
 	go build -v -o $(BIN) -ldflags "$(LDFLAGS)" ./cmd/calendar
 	go build -v -o $(BIN_SCHEDULER) -ldflags "$(LDFLAGS)" ./cmd/calendar_scheduler
+	go build -v -o $(BIN_STORER) -ldflags "$(LDFLAGS)" ./cmd/calendar_storer
 
 run: build
 	$(BIN) -config ./configs/calendar_config.yml
 
 run_scheduler: build
 	$(BIN_SCHEDULER) -config ./configs/scheduler_config.yml
+
+run_storer: build
+	$(BIN_STORER) -config ./configs/storer_config.yml
 
 build-img:
 	docker build \
