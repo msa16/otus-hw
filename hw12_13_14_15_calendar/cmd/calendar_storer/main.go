@@ -3,15 +3,17 @@ package main
 import (
 	"context"
 	"flag"
+	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 	"time"
 
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"                          //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/client/kafka"                 //nolint:depguard
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/config"                       //nolint:depguard
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/logger"                       //nolint:depguard
-	internalhttp "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/server/http"     //nolint:depguard
 	memorystorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/memory" //nolint:depguard
 	sqlstorage "github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage/sql"       //nolint:depguard
 )
@@ -19,7 +21,7 @@ import (
 var configFile string
 
 func init() {
-	flag.StringVar(&configFile, "config", "configs/calendar_config.yml", "Path to configuration file")
+	flag.StringVar(&configFile, "config", "configs/storer_config.yml", "Path to configuration file")
 }
 
 func main() {
@@ -48,23 +50,21 @@ func main() {
 		logg.Info("create memory storage")
 		storage = memorystorage.New()
 	}
-	calendar := app.New(logg, storage, nil)
 
-	server := internalhttp.NewServer(calendar, config.Server.HTTP.Host, config.Server.HTTP.Port)
+	kafka := kafka.New([]string{net.JoinHostPort(config.Kafka.Host, strconv.Itoa(config.Kafka.Port))}, logg)
+	kafka.Subscribe(config.Kafka.Topic, processNotification)
+	calendar = app.New(logg, storage, kafka)
 
 	ctx, cancel := signal.NotifyContext(context.Background(),
 		syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
 	defer cancel()
+	workerCtx = ctx
 
 	go func() {
 		<-ctx.Done()
 
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*3)
 		defer cancel()
-
-		if err := server.Stop(ctx); err != nil {
-			logg.Error("failed to stop http server: " + err.Error())
-		}
 
 		dbStorage, ok := storage.(*sqlstorage.Storage)
 		if ok {
@@ -74,11 +74,11 @@ func main() {
 		}
 	}()
 
-	logg.Info("calendar is running...")
+	logg.Info("calendar storer is starting...")
+	logg.Info(config.Kafka.Host + ":" + strconv.Itoa(config.Kafka.Port) + "/" + config.Kafka.Topic)
 
-	if err := server.Start(ctx); err != nil {
-		logg.Error("failed to start http server: " + err.Error())
-		cancel()
-		os.Exit(1)
+	if err := kafka.Connect(ctx); err != nil {
+		logg.Error("failed to connect to kafka: " + err.Error())
+		return
 	}
 }

@@ -1,4 +1,4 @@
-package main
+package config
 
 import (
 	"log"
@@ -13,8 +13,10 @@ import (
 type Config struct {
 	Logger  LoggerConf `yaml:"log"`
 	Server  ServerConf `yaml:"server"`
+	Kafka   KafkaConf  `yaml:"kafka"`
 	Storage string
 	DB      StorageConf
+	Timer   TimerConf
 }
 
 type LoggerConf struct {
@@ -26,6 +28,12 @@ type ServerConf struct {
 	HTTP AddrConf `yaml:"http"`
 }
 
+type KafkaConf struct {
+	Host  string
+	Port  int
+	Topic string
+}
+
 type AddrConf struct {
 	Host string
 	Port int
@@ -34,6 +42,11 @@ type AddrConf struct {
 type StorageConf struct {
 	Driver string
 	Dsn    string
+}
+
+type TimerConf struct {
+	ReminderEvents int `yaml:"reminder_events"`
+	OldEvents      int `yaml:"old_events"`
 }
 
 func NewConfig(configFile string) Config {

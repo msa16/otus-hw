@@ -1,10 +1,10 @@
 log:
   level: INFO
-  file: /tmp/calendar.log
-server:
-  http:
-    port: 8080
-    host: 0.0.0.0
+  file: /tmp/calendar_storer.log
+kafka:
+  port: 9092
+  host: localhost
+  topic: events
 storage: sql
 db:
   driver: pgx

@@ -140,6 +140,15 @@ func TestStorage(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, len(events), 2)
 	})
+	t.Run("list events reminder", func(t *testing.T) {
+		events, err := repo.ListEventsReminder(ctx)
+		require.NoError(t, err)
+		require.Equal(t, 0, len(events))
+	})
+	t.Run("clear reminder", func(t *testing.T) {
+		err := repo.ClearReminderTime(ctx, event1.ID)
+		require.NoError(t, err)
+	})
 
 	t.Run("delete event ErrEventNotFound", func(t *testing.T) {
 		err := repo.DeleteEvent(ctx, badEventID)
@@ -154,6 +163,24 @@ func TestStorage(t *testing.T) {
 		require.Equal(t, repo.byUser[event2.UserID][event2.StartTime], &event2)
 		require.Equal(t, repo.all[event2.ID], &event2)
 	})
+}
+
+func TestStorageDeleteEventsBeforeDate(t *testing.T) {
+	repo := New()
+	ctx := context.Background()
+	_, err := repo.CreateEvent(ctx, storage.Event{
+		UserID: 1, StartTime: time.Now().Add(-time.Hour), StopTime: time.Now(),
+	})
+	require.NoError(t, err)
+	_, err = repo.CreateEvent(ctx, storage.Event{
+		UserID: 2, StartTime: time.Now().Add(time.Hour), StopTime: time.Now().Add(time.Hour * 2),
+	})
+	require.NoError(t, err)
+
+	err = repo.DeleteEventsBeforeDate(ctx, time.Now())
+	require.NoError(t, err)
+	require.Equal(t, len(repo.all), 1)
+	require.Equal(t, 1, len(repo.byUser[2]))
 }
 
 func TestStorageConcurrency(t *testing.T) {

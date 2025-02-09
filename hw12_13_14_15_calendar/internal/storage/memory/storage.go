@@ -128,3 +128,37 @@ func (s *Storage) GetEvent(_ context.Context, id string) (*storage.Event, error)
 	}
 	return current, nil
 }
+
+func (s *Storage) ListEventsReminder(_ context.Context) ([]*storage.Event, error) {
+	result := make([]*storage.Event, 0)
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	for _, v := range s.all {
+		if v.Reminder != nil && v.StartTime.Before(time.Now().Add(-*v.Reminder)) {
+			result = append(result, v)
+		}
+	}
+	return result, nil
+}
+
+func (s *Storage) ClearReminderTime(_ context.Context, _ string) error {
+	// поле reminderTime есть только в БД, здесь ничего делать не надо
+	return nil
+}
+
+func (s *Storage) DeleteEventsBeforeDate(_ context.Context, time time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	for _, v := range s.all {
+		if v.StartTime.Before(time) {
+			delete(s.byUser[v.UserID], v.StartTime)
+			delete(s.all, v.ID)
+		}
+	}
+	return nil
+}
+
+func (s *Storage) SaveNotification(_ context.Context, _ storage.Notification) error {
+	// реализация только в БД
+	return nil
+}

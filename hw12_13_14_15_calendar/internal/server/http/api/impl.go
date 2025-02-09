@@ -26,7 +26,11 @@ func NewAPIServer(app *app.App) *Server {
 func (s *Server) FindEvents(w http.ResponseWriter, r *http.Request, params FindEventsParams) {
 	var stEvents []*storage.Event
 	var err error
-	switch *params.Period {
+	period := "day"
+	if params.Period != nil {
+		period = *params.Period
+	}
+	switch period {
 	case "day":
 		stEvents, err = s.app.Storage.ListEventsDay(r.Context(), params.StartTime)
 	case "week":
@@ -61,12 +65,8 @@ func (s *Server) CreateEvent(w http.ResponseWriter, r *http.Request) {
 	// We expect a NewEvent object in the request body.
 	var newEvent NewEvent
 	if err := json.NewDecoder(r.Body).Decode(&newEvent); err != nil {
+		s.app.Logger.Error(err.Error())
 		sendAPIError(w, http.StatusBadRequest, "Invalid format for NewEvent")
-		return
-	}
-	reminder, err := time.ParseDuration(*newEvent.Reminder)
-	if err != nil {
-		sendAPIError(w, http.StatusBadRequest, "Invalid format for Reminder")
 		return
 	}
 
@@ -75,7 +75,15 @@ func (s *Server) CreateEvent(w http.ResponseWriter, r *http.Request) {
 		StartTime: newEvent.StartTime,
 		StopTime:  newEvent.StopTime,
 		UserID:    newEvent.UserID,
-		Reminder:  reminder,
+	}
+	if newEvent.Reminder != nil {
+		reminder, err := time.ParseDuration(*newEvent.Reminder)
+		if err != nil {
+			s.app.Logger.Error(err.Error())
+			sendAPIError(w, http.StatusBadRequest, "Invalid format for Reminder")
+			return
+		}
+		storageEvent.Reminder = &reminder
 	}
 	if newEvent.Description != nil {
 		storageEvent.Description = *newEvent.Description
@@ -128,21 +136,28 @@ func (s *Server) UpdateEventByID(w http.ResponseWriter, r *http.Request, id stri
 		sendAPIError(w, http.StatusBadRequest, "Invalid format for Event")
 		return
 	}
-	reminder, err := time.ParseDuration(*event.Reminder)
-	if err != nil {
-		sendAPIError(w, http.StatusBadRequest, "Invalid format for Reminder")
-		return
+
+	stEvent := storage.Event{
+		ID:        event.ID,
+		Title:     event.Title,
+		StartTime: event.StartTime,
+		StopTime:  event.StopTime,
+		UserID:    event.UserID,
 	}
 
-	err = s.app.Storage.UpdateEvent(r.Context(), id, storage.Event{
-		ID:          event.ID,
-		Title:       event.Title,
-		Description: *event.Description,
-		StartTime:   event.StartTime,
-		StopTime:    event.StopTime,
-		UserID:      event.UserID,
-		Reminder:    reminder,
-	})
+	if event.Reminder != nil {
+		reminder, err := time.ParseDuration(*event.Reminder)
+		if err != nil {
+			sendAPIError(w, http.StatusBadRequest, "Invalid format for Reminder")
+			return
+		}
+		stEvent.Reminder = &reminder
+	}
+	if event.Description != nil {
+		stEvent.Description = *event.Description
+	}
+
+	err := s.app.Storage.UpdateEvent(r.Context(), id, stEvent)
 	if err != nil {
 		sendAPIError(w, storageErrorToAPIErrorCode(err), err.Error())
 		return

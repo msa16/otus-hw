@@ -4,12 +4,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/client"  //nolint:depguard
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage" //nolint:depguard
 )
 
 type App struct {
 	Logger  Logger
 	Storage Storage
+	Broker  client.Broker
 }
 
 type Logger interface {
@@ -27,8 +29,12 @@ type Storage interface {
 	ListEventsDay(ctx context.Context, startTime time.Time) ([]*storage.Event, error)
 	ListEventsWeek(ctx context.Context, startTime time.Time) ([]*storage.Event, error)
 	ListEventsMonth(ctx context.Context, startTime time.Time) ([]*storage.Event, error)
+	ListEventsReminder(ctx context.Context) ([]*storage.Event, error)
+	ClearReminderTime(ctx context.Context, id string) error
+	DeleteEventsBeforeDate(ctx context.Context, time time.Time) error
+	SaveNotification(ctx context.Context, notification storage.Notification) error
 }
 
-func New(logger Logger, storage Storage) *App {
-	return &App{Logger: logger, Storage: storage}
+func New(logger Logger, storage Storage, broker client.Broker) *App {
+	return &App{Logger: logger, Storage: storage, Broker: broker}
 }

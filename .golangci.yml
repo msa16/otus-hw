@@ -22,7 +22,7 @@ issues:
     # от ошибок линтеров на исходники golang в пайплайне github - Error: ../../../../../../opt/hostedtoolcache/go/1.23.4
     - /opt/hostedtoolcache/go/
     # от ошибок линтеров на исходники используемых пакетов
-    - ../../../../go/pkg/mod/github.com/
+    - ../../../../go/pkg/mod/
 
 linters:
   disable-all: true
