@@ -9,3 +9,6 @@ storage: sql
 db:
   driver: pgx
   dsn: postgres://calendar:calendar@localhost:15432/calendar
+timer:
+  reminder_events: 5
+  old_events: 300

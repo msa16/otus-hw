@@ -5,14 +5,15 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app"     //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/app" //nolint:depguard
+	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/config"
 	"github.com/msa16/otus-hw/hw12_13_14_15_calendar/internal/storage" //nolint:depguard
 )
 
-func worker(ctx context.Context, app *app.App, topic string) {
-	ticker := time.NewTicker(time.Second * 5)
+func worker(ctx context.Context, app *app.App, config *config.Config) {
+	ticker := time.NewTicker(time.Second * time.Duration(config.Timer.ReminderEvents))
 	defer ticker.Stop()
-	tickerClearOldEvents := time.NewTicker(time.Minute * 10)
+	tickerClearOldEvents := time.NewTicker(time.Second * time.Duration(config.Timer.OldEvents))
 	defer tickerClearOldEvents.Stop()
 	for {
 		select {
@@ -22,7 +23,7 @@ func worker(ctx context.Context, app *app.App, topic string) {
 			tickerClearOldEvents.Stop()
 			return
 		case <-ticker.C:
-			processEvents(ctx, app, topic)
+			processEvents(ctx, app, config.Kafka.Topic)
 		case <-tickerClearOldEvents.C:
 			clearOldEvents(ctx, app)
 		}

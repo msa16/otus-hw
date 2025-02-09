@@ -16,6 +16,7 @@ type Config struct {
 	Kafka   KafkaConf  `yaml:"kafka"`
 	Storage string
 	DB      StorageConf
+	Timer   TimerConf
 }
 
 type LoggerConf struct {
@@ -41,6 +42,11 @@ type AddrConf struct {
 type StorageConf struct {
 	Driver string
 	Dsn    string
+}
+
+type TimerConf struct {
+	ReminderEvents int `yaml:"reminder_events"`
+	OldEvents      int `yaml:"old_events"`
 }
 
 func NewConfig(configFile string) Config {
