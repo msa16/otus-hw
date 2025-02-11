@@ -7,7 +7,7 @@ import (
 	"regexp"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
+	jsoniter "github.com/json-iterator/go" //nolint:depguard
 )
 
 type User struct {
@@ -33,7 +33,7 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 type users *[]*User
 
 func getUsers(r io.Reader) (users, error) {
-	var json = jsoniter.ConfigFastest
+	json := jsoniter.ConfigFastest
 	result := make([]*User, 0)
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
