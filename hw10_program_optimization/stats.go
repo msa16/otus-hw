@@ -33,13 +33,13 @@ func GetDomainStat(r io.Reader, domain string) (DomainStat, error) {
 type users *[]*User
 
 func getUsers(r io.Reader) (users, error) {
-	var json = jsoniter.ConfigCompatibleWithStandardLibrary
+	var json = jsoniter.ConfigFastest
 	result := make([]*User, 0)
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
-		line := scanner.Text()
+		line := scanner.Bytes()
 		user := User{}
-		if err := json.Unmarshal([]byte(line), &user); err != nil {
+		if err := json.Unmarshal(line, &user); err != nil {
 			return nil, err
 		}
 		result = append(result, &user)
