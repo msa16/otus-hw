@@ -1,3 +1,4 @@
+//go:build !bench
 // +build !bench
 
 package hw10programoptimization
@@ -35,5 +36,46 @@ func TestGetDomainStat(t *testing.T) {
 		result, err := GetDomainStat(bytes.NewBufferString(data), "unknown")
 		require.NoError(t, err)
 		require.Equal(t, DomainStat{}, result)
+	})
+}
+
+func TestGetDomainStatEmptyData(t *testing.T) {
+	data := `{"Id":1, "Email":""}
+{"Id":2,"Email":"mLynch@broWsecat.com"}
+{"Id":3,"Email":"RoseSmith@Browsecat.com"}
+{"Id":4}
+{"Id":5,"Email":"nulla@Linktype.com"}`
+
+	t.Run("find 'com' with absent email", func(t *testing.T) {
+		result, err := GetDomainStat(bytes.NewBufferString(data), "com")
+		require.NoError(t, err)
+		require.Equal(t, DomainStat{
+			"browsecat.com": 2,
+			"linktype.com":  1,
+		}, result)
+	})
+
+	t.Run("find 'gov' in empty data", func(t *testing.T) {
+		result, err := GetDomainStat(bytes.NewBufferString(""), "gov")
+		require.NoError(t, err)
+		require.Equal(t, DomainStat{}, result)
+	})
+
+}
+
+func TestGetDomainStatManyDots(t *testing.T) {
+	data := `{"Id":1,"Email":"ivanoff@int.company.com"}
+{"Id":2,"Email":"alex.petroff@int.company.com"}
+{"Id":3,"Email":"J.R.RoseSmith@company.com"}
+{"Id":4,"Email":"nulla@ext.company.com"}
+{"Id":5,"Email":"a.sveta.kurnikova@ext.company.com"}`
+	t.Run("many dots to left and right from @", func(t *testing.T) {
+		result, err := GetDomainStat(bytes.NewBufferString(data), "com")
+		require.NoError(t, err)
+		require.Equal(t, DomainStat{
+			"int.company.com": 2,
+			"company.com":     1,
+			"ext.company.com": 2,
+		}, result)
 	})
 }

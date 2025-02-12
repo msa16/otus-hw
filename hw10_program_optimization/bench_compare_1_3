@@ -1,0 +1,21 @@
+goos: linux
+goarch: amd64
+pkg: github.com/msa16/otus-hw/hw10_program_optimization
+cpu: AMD Ryzen 7 5800H with Radeon Graphics         
+                │    bench_1    │               bench_3               │
+                │    sec/op     │   sec/op     vs base                │
+GetUsers-16         318.7m ± 2%   135.4m ± 1%  -57.52% (p=0.000 n=10)
+CountDomains-16   144.286m ± 1%   1.999m ± 1%  -98.61% (p=0.000 n=10)
+geomean             214.4m        16.45m       -92.33%
+
+                │     bench_1     │               bench_3                │
+                │      B/op       │     B/op      vs base                │
+GetUsers-16         174.87Mi ± 0%   25.46Mi ± 0%  -85.44% (p=0.000 n=10)
+CountDomains-16   136518.7Ki ± 0%   197.5Ki ± 0%  -99.86% (p=0.000 n=10)
+geomean              152.7Mi        2.216Mi       -98.55%
+
+                │    bench_1    │               bench_3               │
+                │   allocs/op   │  allocs/op   vs base                │
+GetUsers-16        1201.0k ± 0%   801.0k ± 0%  -33.31% (p=0.000 n=10)
+CountDomains-16   1844.38k ± 0%   11.11k ± 0%  -99.40% (p=0.000 n=10)
+geomean             1.488M        94.31k       -93.66%

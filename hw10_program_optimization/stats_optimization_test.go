@@ -8,7 +8,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/stretchr/testify/require"
+	"github.com/stretchr/testify/require" //nolint:depguard
 )
 
 const (
@@ -18,7 +18,15 @@ const (
 	timeLimit = 300 * time.Millisecond
 )
 
-// go test -v -count=1 -timeout=30s -tags bench .
+/*
+$ go test -v -count=1 -timeout=30s -tags bench .
+бенчмарки по скорости и памяти
+$ go test -bench=. -benchmem .
+запись профилировки
+$ go test -bench=. -benchmem -cpuprofile=cpu.out -memprofile=mem.out .
+просмотр профилировки
+$ go tool pprof -http=":8090" 01_bench.test mem.out.
+*/
 func TestGetDomainStat_Time_And_Memory(t *testing.T) {
 	bench := func(b *testing.B) {
 		b.Helper()

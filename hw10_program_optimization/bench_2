@@ -1,0 +1,26 @@
+goos: linux
+goarch: amd64
+pkg: github.com/msa16/otus-hw/hw10_program_optimization
+cpu: AMD Ryzen 7 5800H with Radeon Graphics         
+BenchmarkGetUsers-16        	       8	 137051077 ns/op	26701737 B/op	  801002 allocs/op
+BenchmarkGetUsers-16        	       8	 138919354 ns/op	26703050 B/op	  801004 allocs/op
+BenchmarkGetUsers-16        	       8	 138778969 ns/op	26702861 B/op	  801002 allocs/op
+BenchmarkGetUsers-16        	       8	 136692528 ns/op	26701763 B/op	  801002 allocs/op
+BenchmarkGetUsers-16        	       8	 139897233 ns/op	26703851 B/op	  801004 allocs/op
+BenchmarkGetUsers-16        	       8	 137919892 ns/op	26701137 B/op	  801001 allocs/op
+BenchmarkGetUsers-16        	       8	 140046045 ns/op	26703182 B/op	  801003 allocs/op
+BenchmarkGetUsers-16        	       8	 139190765 ns/op	26702118 B/op	  801003 allocs/op
+BenchmarkGetUsers-16        	       8	 135576928 ns/op	26700537 B/op	  801000 allocs/op
+BenchmarkGetUsers-16        	       8	 140638562 ns/op	26700272 B/op	  801000 allocs/op
+BenchmarkCountDomains-16    	     128	   8846915 ns/op	 2864311 B/op	  111123 allocs/op
+BenchmarkCountDomains-16    	     127	   9089113 ns/op	 2861126 B/op	  111123 allocs/op
+BenchmarkCountDomains-16    	     129	   8875206 ns/op	 2862474 B/op	  111123 allocs/op
+BenchmarkCountDomains-16    	     128	   9124087 ns/op	 2861640 B/op	  111122 allocs/op
+BenchmarkCountDomains-16    	     129	   8915829 ns/op	 2863415 B/op	  111123 allocs/op
+BenchmarkCountDomains-16    	     128	   9141566 ns/op	 2861176 B/op	  111123 allocs/op
+BenchmarkCountDomains-16    	     126	   8864998 ns/op	 2860787 B/op	  111122 allocs/op
+BenchmarkCountDomains-16    	     128	   9075721 ns/op	 2861320 B/op	  111122 allocs/op
+BenchmarkCountDomains-16    	     126	   8902893 ns/op	 2861676 B/op	  111122 allocs/op
+BenchmarkCountDomains-16    	     127	   9112214 ns/op	 2861711 B/op	  111123 allocs/op
+PASS
+ok  	github.com/msa16/otus-hw/hw10_program_optimization	47.601s
