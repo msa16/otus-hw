@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"regexp"
 	"strings"
 
 	jsoniter "github.com/json-iterator/go" //nolint:depguard
@@ -52,12 +51,9 @@ func getUsers(r io.Reader) (users, error) {
 
 func countDomains(u users, domain string) (DomainStat, error) {
 	result := make(DomainStat)
-	domainRegexp, err := regexp.Compile("\\." + domain)
-	if err != nil {
-		return nil, err
-	}
+	dotDomain := "." + domain
 	for _, user := range *u {
-		if domainRegexp.Match([]byte(user.Email)) {
+		if strings.HasSuffix(user.Email, dotDomain) {
 			idx := strings.IndexByte(user.Email, '@')
 			if idx > 0 {
 				domain := strings.ToLower(user.Email[idx+1:])

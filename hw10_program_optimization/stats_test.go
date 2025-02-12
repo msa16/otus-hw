@@ -62,3 +62,20 @@ func TestGetDomainStatEmptyData(t *testing.T) {
 	})
 
 }
+
+func TestGetDomainStatManyDots(t *testing.T) {
+	data := `{"Id":1,"Email":"ivanoff@int.company.com"}
+{"Id":2,"Email":"alex.petroff@int.company.com"}
+{"Id":3,"Email":"J.R.RoseSmith@company.com"}
+{"Id":4,"Email":"nulla@ext.company.com"}
+{"Id":5,"Email":"a.sveta.kurnikova@ext.company.com"}`
+	t.Run("many dots to left and right from @", func(t *testing.T) {
+		result, err := GetDomainStat(bytes.NewBufferString(data), "com")
+		require.NoError(t, err)
+		require.Equal(t, DomainStat{
+			"int.company.com": 2,
+			"company.com":     1,
+			"ext.company.com": 2,
+		}, result)
+	})
+}
